@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28802.258
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyRefScanner", "AssemblyRefScanner\AssemblyRefScanner.csproj", "{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B632FC96-1F9C-4DF5-9D90-EB3A2BF982DC}
+	EndGlobalSection
+EndGlobal
