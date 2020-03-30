@@ -1,56 +1,136 @@
-﻿using System;
+﻿using Microsoft;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace AssemblyRefScanner
 {
     class Program
     {
-        private const string baseDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\master";
+        private const string baseDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\IntPreview";
+        private const string interestingReferenceName = "StreamJsonRpc";
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            var results = new Dictionary<Version, List<string>>();
-            foreach (var file in Directory.EnumerateFiles(baseDir, "*.dll", SearchOption.AllDirectories))
+            var cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (s, e) =>
             {
-                try
-                {
-                    var assembly = Assembly.LoadFile(file);
-                    var interestingRefs = assembly.GetReferencedAssemblies().Where(n => n.Name == "StreamJsonRpc");
-                    foreach (var r in interestingRefs)
-                    {
-                        if (!results.TryGetValue(r.Version, out var list))
-                        {
-                            list = new List<string>();
-                            results.Add(r.Version, list);
-                        }
+                Console.WriteLine("Canceling...");
+                cts.Cancel();
+                e.Cancel = true;
+            };
 
-                        list.Add(file.Substring(baseDir.Length));
-                        Console.Write('.');
+            var refReader = new TransformBlock<string, (string AssemblyPath, ImmutableDictionary<string, ImmutableArray<string>>? References)>(
+                assemblyPath => (assemblyPath, ScanAssemblyReferences(assemblyPath)),
+                new ExecutionDataflowBlockOptions
+                {
+                    MaxMessagesPerTask = 5,
+                    BoundedCapacity = Environment.ProcessorCount * 4,
+                    SingleProducerConstrained = true,
+                    CancellationToken = cts.Token,
+                    MaxDegreeOfParallelism = Environment.ProcessorCount,
+                });
+
+            var filter = new ActionBlock<(string AssemblyPath, ImmutableDictionary<string, ImmutableArray<string>>? References)>(
+                item =>
+                {
+                    if (item.References is null)
+                    {
+                        return;
                     }
+
+                    //PrintAssembliesWithMultiVersionedDependencies(item.AssemblyPath, item.References);
+                    PrintAssembliesWithInterestingReference(item.AssemblyPath, item.References);
+                },
+                new ExecutionDataflowBlockOptions
+                {
+                    BoundedCapacity = 16,
+                    MaxMessagesPerTask = 5,
+                    SingleProducerConstrained = true,
+                    CancellationToken = cts.Token
+                });
+            refReader.LinkTo(filter, new DataflowLinkOptions { PropagateCompletion = true });
+
+            int count = 0;
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(baseDir, "*.dll", SearchOption.AllDirectories))
+                {
+                    await refReader.SendAsync(file);
+                    count++;
                 }
-                catch (BadImageFormatException) { }
-                catch (FileNotFoundException) { }
-                catch (FileLoadException) { }
+
+                refReader.Complete();
+            }
+            catch (Exception ex)
+            {
+                ITargetBlock<string> failBlock = refReader;
+                failBlock.Fault(ex);
             }
 
-            Console.WriteLine();
-            foreach (var version in results.OrderBy(kv => kv.Key))
+            await filter.Completion;
+            Console.WriteLine($"All done ({count} libraries scanned)!");
+            Console.ReadLine();
+        }
+
+        /// <summary>
+        /// Returns a map of reference assembly simple names to the set of full names actually referenced.
+        /// </summary>
+        /// <param name="assemblyPath">The path to the assembly to load.</param>
+        /// <returns>A sequence of references key'd by simple name.</returns>
+        static ImmutableDictionary<string, ImmutableArray<string>>? ScanAssemblyReferences(string assemblyPath)
+        {
+            try
             {
-                Console.WriteLine(version.Key);
-                foreach (var file in version.Value)
+                Assembly a = new AssemblyLoadContext(assemblyPath, isCollectible: true).LoadFromAssemblyPath(assemblyPath);
+                return (from reference in a.GetReferencedAssemblies()
+                        group reference.FullName by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray());
+            }
+            catch (BadImageFormatException) { }
+            catch (FileNotFoundException) { }
+            catch (FileLoadException) { }
+
+            return null;
+        }
+
+        static void PrintAssembliesWithInterestingReference(string assemblyPath, ImmutableDictionary<string, ImmutableArray<string>> references)
+        {
+            if (references.TryGetValue(interestingReferenceName, out ImmutableArray<string> interestingRefs))
+            {
+                Console.WriteLine(assemblyPath);
+                foreach (var reference in interestingRefs)
                 {
-                    Console.WriteLine(file);
+                    Console.WriteLine($"\t{reference}");
                 }
 
                 Console.WriteLine();
             }
+        }
 
-            Console.WriteLine("All done!");
-            Console.ReadLine();
+        static void PrintAssembliesWithMultiVersionedDependencies(string assemblyPath, ImmutableDictionary<string, ImmutableArray<string>> references)
+        {
+            foreach (var referencesByName in references)
+            {
+                if (referencesByName.Value.Length > 1)
+                {
+                    Console.WriteLine(assemblyPath);
+                    foreach (var reference in referencesByName.Value)
+                    {
+                        Console.WriteLine($"\t{reference}");
+                    }
+
+                    Console.WriteLine();
+                }
+            }
         }
     }
 }
