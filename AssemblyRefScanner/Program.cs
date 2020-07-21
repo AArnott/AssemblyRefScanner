@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.CommandLine;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,10 +16,7 @@ namespace AssemblyRefScanner
 {
     class Program
     {
-        private const string baseDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\IntPreview";
-        private const string interestingReferenceName = "StreamJsonRpc";
-
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             var cts = new CancellationTokenSource();
             Console.CancelKeyPress += (s, e) =>
@@ -27,6 +25,20 @@ namespace AssemblyRefScanner
                 cts.Cancel();
                 e.Cancel = true;
             };
+
+            string? path = null;
+            string? simpleAssemblyName = null;
+            var argSyntax = ArgumentSyntax.Parse(args, syntax =>
+            {
+                syntax.DefineOption("r|findReferences", ref simpleAssemblyName, "Searches for references to the assembly with the specified simple name. Without this switch, all assemblies that reference multiple versions of *any* assembly will be printed.");
+                syntax.DefineParameter("path", ref path, "The path to the directory to search for assembly references.");
+            });
+            
+            if (path is null)
+            {
+                Console.Error.WriteLine(argSyntax.GetHelpText(Console.WindowWidth));
+                return 1;
+            }
 
             var refReader = new TransformBlock<string, (string AssemblyPath, ImmutableDictionary<string, ImmutableArray<AssemblyName>>? References)>(
                 assemblyPath => (assemblyPath, ScanAssemblyReferences(assemblyPath)),
@@ -52,9 +64,9 @@ namespace AssemblyRefScanner
                 });
             refReader.LinkTo(filterBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-            var reportGraph =
-                //PrintAssembliesWithInterestingReference(cts.Token);
-                PrintAssembliesWithMultiVersionedDependencies(cts.Token);
+            var reportGraph = simpleAssemblyName is null
+                ? PrintAssembliesWithMultiVersionedDependencies(cts.Token)
+                : PrintAssembliesWithInterestingReference(simpleAssemblyName, cts.Token);
 
             filterBlock.LinkTo(reportGraph.ReceivingBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
@@ -62,7 +74,7 @@ namespace AssemblyRefScanner
             int dllCount = 0;
             try
             {
-                foreach (var file in Directory.EnumerateFiles(baseDir, "*.dll", SearchOption.AllDirectories))
+                foreach (var file in Directory.EnumerateFiles(path, "*.dll", SearchOption.AllDirectories))
                 {
                     await refReader.SendAsync(file);
                     dllCount++;
@@ -81,11 +93,18 @@ namespace AssemblyRefScanner
                 await reportGraph.ReportComplete;
                 Console.WriteLine($"All done ({dllCount} libraries scanned in {timer.Elapsed:g}, or {dllCount / timer.Elapsed.TotalSeconds:0,0} libraries per second)!");
             }
+            catch (OperationCanceledException)
+            {
+                Console.Error.WriteLine("Canceled.");
+                return 2;
+            }
             catch (Exception ex)
             {
-                Console.WriteLine("Fault encountered during scan: ");
-                Console.WriteLine(ex);
+                Console.Error.WriteLine("Fault encountered during scan: ");
+                Console.Error.WriteLine(ex);
             }
+
+            return 0;
         }
 
         /// <summary>
@@ -103,7 +122,7 @@ namespace AssemblyRefScanner
                     var mdReader = peReader.GetMetadataReader();
                     return (from referenceHandle in mdReader.AssemblyReferences
                             let reference = mdReader.GetAssemblyReference(referenceHandle).GetAssemblyName()
-                            group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray());
+                            group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray(), StringComparer.OrdinalIgnoreCase);
                 }
                 catch (InvalidOperationException) { /* Not a PE file */ }
             }
@@ -111,7 +130,7 @@ namespace AssemblyRefScanner
             return null;
         }
 
-        static (ITargetBlock<(string, ImmutableDictionary<string, ImmutableArray<AssemblyName>>)> ReceivingBlock, Task ReportComplete) PrintAssembliesWithInterestingReference(CancellationToken cancellationToken)
+        static (ITargetBlock<(string, ImmutableDictionary<string, ImmutableArray<AssemblyName>>)> ReceivingBlock, Task ReportComplete) PrintAssembliesWithInterestingReference(string interestingReferenceName, CancellationToken cancellationToken)
         {
             var versionsReferenced = new Dictionary<Version, List<string>>();
             var aggregatingBlock = new ActionBlock<(string AssemblyPath, ImmutableDictionary<string, ImmutableArray<AssemblyName>> References)>(

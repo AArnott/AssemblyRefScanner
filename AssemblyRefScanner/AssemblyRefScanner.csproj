@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
     <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
+    <PackageReference Include="System.CommandLine" Version="0.1.0-preview2-180503-2" />
   </ItemGroup>
 
 </Project>
