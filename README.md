@@ -1,54 +1,94 @@
 # AssemblyRefScanner
 
-This tool will very quickly scan an entire directory tree for all managed assemblies that reference either of:
+This tool will very quickly scan an entire directory tree for all managed assemblies that reference interesting things, including:
 
 1. A particular simple assembly name of interest.
 1. Multiple references to the same assembly, but different versions, within the same assembly. For example if A.dll references B.dll v1.0.0.0 and B.dll v2.0.0.0, A.dll would be found.
+1. A particular *type* (useful when making a breaking change).
 
 ## Usage
 
-Clone the repo and use `dotnet run -- ` within the `AssemblyRefScanner` directory.
+Install or update the CLI tool with:
 
 ```
-usage: AssemblyRefScanner [-r <arg>] [--] <path>
-
-    -r, --findReferences <arg>    Searches for references to the assembly with the specified simple name.
-                                  Without this switch, all assemblies that reference multiple versions of
-                                  *any* assembly will be printed.
-    <path>                        The path to the directory to search for assembly references.
+dotnet tool update -g AssemblyRefScanner
 ```
 
-### Sample search for all references to StreamJsonRpc
+Then refer to the tool by its CLI name: `refscanner`:
 
 ```
-> dotnet run -- 'C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\' -r streamjsonrpc
+PS> refscanner -h
+AssemblyRefScanner:
+  AssemblyRefScanner v1.0.4-beta+63eabf48ee
+
+Usage:
+  AssemblyRefScanner [options] [command]
+
+Options:
+  --version         Show version information
+  -?, -h, --help    Show help and usage information
+
+Commands:
+  assembly <simpleAssemblyName>           Searches for references to the assembly with the specified simple name.
+  multiversions                           All assemblies that reference multiple versions of *any* assembly will be printed.
+  embeddedTypes <embeddableAssemblies>    Searches for assemblies that have embedded types.
+  type <typeName>                         Searches for references to a given type.
+```
+
+You can then get usage help for a particular command:
+
+```
+PS> refscanner assembly -h
+assembly:
+  Searches for references to the assembly with the specified simple name.
+
+Usage:
+  AssemblyRefScanner assembly [options] <simpleAssemblyName>
+
+Arguments:
+  <simpleAssemblyName>    The simple assembly name (e.g. "StreamJsonRpc") to search for in referenced assembly lists.
+
+Options:
+  --path <path>     The path of the directory to search. This should be a full install of VS (i.e. all workloads) to produce complete results. If not specified, the current directory will be searched. [default:
+                    C:\git\Helix]
+  -?, -h, --help    Show help and usage information
+  ```
+
+**Tip:** Enjoy completion of commands and switches at the command line by using PowerShell and taking [these steps](https://github.com/dotnet/command-line-api/blob/main/docs/dotnet-suggest.md).
+
+### Samples
+
+#### Search for all references to StreamJsonRpc
+
+```
+PS> refscanner assembly streamjsonrpc --path "C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\"
 
 1.2.0.0
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServer.Client.LiveShare.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServer.Client.LiveShare.dll
 
 1.3.0.0
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\CommonExtensions\Microsoft\ModelBuilder\Microsoft.ML.ModelBuilder.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.15.8.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.16.0.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LiveShare.Core.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LiveShare.Rpc.Json.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\CommonExtensions\Microsoft\ModelBuilder\AutoMLService\Microsoft.ML.ModelBuilder.AutoMLService.dll
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\CommonExtensions\Microsoft\ModelBuilder\AzCopyService\Microsoft.ML.ModelBuilder.AzCopyService.dll
+        CommonExtensions\Microsoft\ModelBuilder\Microsoft.ML.ModelBuilder.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.15.8.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.16.0.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LanguageServices.LanguageExtension.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LiveShare.Core.dll
+        Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LiveShare.Rpc.Json.dll
+        CommonExtensions\Microsoft\ModelBuilder\AutoMLService\Microsoft.ML.ModelBuilder.AutoMLService.dll
+        CommonExtensions\Microsoft\ModelBuilder\AzCopyService\Microsoft.ML.ModelBuilder.AzCopyService.dll
 ```
 
 Above we see all the assemblies listed that reference StreamJsonRpc.dll, grouped by the version of StreamJsonRpc.dll that they reference.
 
-### Sample search for multi-version references
+#### Search for multi-version references
 
 ```
-> dotnet run -- 'C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\'
+PS> refscanner multiversions --path "C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\"
 
-C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\CommonExtensions\Microsoft\LanguageServer\Microsoft.VisualStudio.LanguageServer.Client.dll
+CommonExtensions\Microsoft\LanguageServer\Microsoft.VisualStudio.LanguageServer.Client.dll
         StreamJsonRpc, Version=1.5.0.0, PublicKeyToken=b03f5f7f11d50a3a
         StreamJsonRpc, Version=2.4.0.0, PublicKeyToken=b03f5f7f11d50a3a
 
-C:\Program Files (x86)\Microsoft Visual Studio\2019\master\Common7\IDE\CommonExtensions\Microsoft\LanguageServer\Microsoft.VisualStudio.LanguageServer.Client.Implementation.dll
+CommonExtensions\Microsoft\LanguageServer\Microsoft.VisualStudio.LanguageServer.Client.Implementation.dll
         StreamJsonRpc, Version=2.4.0.0, PublicKeyToken=b03f5f7f11d50a3a
         StreamJsonRpc, Version=1.5.0.0, PublicKeyToken=b03f5f7f11d50a3a
 ```
