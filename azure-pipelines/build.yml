@@ -6,4 +6,6 @@ jobs:
   - checkout: self
     clean: true
   - template: install-dependencies.yml
+  - powershell: '& (./azure-pipelines/Get-nbgv.ps1) cloud'
+    displayName: Set build number
   - template: dotnet.yml
