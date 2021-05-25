@@ -1,5 +1,7 @@
 # AssemblyRefScanner
 
+[![NuGet package](https://img.shields.io/nuget/v/AssemblyRefScanner)](https://www.nuget.org/packages/assemblyrefscanner)
+
 This tool will very quickly scan an entire directory tree for all managed assemblies that reference interesting things, including:
 
 1. A particular simple assembly name of interest.
