@@ -60,11 +60,21 @@ namespace AssemblyRefScanner
             };
             embeddedSearch.Handler = CommandHandler.Create<string, IList<string>>(new EmbeddedTypeScanner(CtrlCToken).Execute);
 
+            var typeRefSearch = new Command("type", "Searches for references to a given type.")
+            {
+                searchDirOption,
+                new Option<string>(new [] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found."),
+                new Option<string>(new [] { "--namespace", "-n" }, "The namespace of the type to find references to."),
+                new Argument<string>("typeName", "The simple name of the type to find references to.") { Arity = ArgumentArity.ExactlyOne },
+            };
+            typeRefSearch.Handler = CommandHandler.Create<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute);
+
             var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
             {
                 versions,
                 multiVersions,
                 embeddedSearch,
+                typeRefSearch,
             };
             return new CommandLineBuilder(root)
                 .UseDefaults()

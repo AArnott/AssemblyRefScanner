@@ -18,8 +18,22 @@ namespace AssemblyRefScanner
 
         protected CancellationToken CancellationToken { get; }
 
+        protected static string TrimBasePath(string absolutePath, string searchPath)
+        {
+            if (!searchPath.EndsWith('\\'))
+            {
+                searchPath += '\\';
+            }
+
+            if (absolutePath.StartsWith(searchPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return absolutePath.Substring(searchPath.Length);
+            }
+
+            return absolutePath;
+        }
+
         protected TransformManyBlock<string, (string AssemblyPath, T Results)> CreateProcessAssembliesBlock<T>(Func<MetadataReader, T> assemblyReader)
-            where T : class?
         {
             return new TransformManyBlock<string, (string AssemblyPath, T Results)>(
                 assemblyPath =>
