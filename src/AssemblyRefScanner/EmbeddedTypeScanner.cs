@@ -1,14 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
-using System.Threading;
-using System.Threading.Tasks;
+﻿// Copyright (c) Andrew Arnott. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace AssemblyRefScanner
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.Immutable;
+    using System.IO;
+    using System.Reflection.Metadata;
+    using System.Reflection.PortableExecutable;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     internal class EmbeddedTypeScanner : ScannerBase
     {
         public EmbeddedTypeScanner(CancellationToken cancellationToken)

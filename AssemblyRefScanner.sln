@@ -3,14 +3,37 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31324.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyRefScanner", "AssemblyRefScanner\AssemblyRefScanner.csproj", "{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyRefScanner", "src\AssemblyRefScanner\AssemblyRefScanner.csproj", "{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{336B0685-3599-4C91-A6A3-D75A1E8129F4}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		azure-pipelines.yml = azure-pipelines.yml
 		Directory.Build.props = Directory.Build.props
+		Directory.Build.rsp = Directory.Build.rsp
+		Directory.Build.targets = Directory.Build.targets
+		global.json = global.json
+		init.ps1 = init.ps1
 		nuget.config = nuget.config
 		version.json = version.json
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C430506A-5492-445A-B593-F9B39871D8D7}"
+	ProjectSection(SolutionItems) = preProject
+		src\.editorconfig = src\.editorconfig
+		src\Directory.Build.props = src\Directory.Build.props
+		src\Directory.Build.targets = src\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A3AD093D-2488-4E7C-922E-74EE4F9E5851}"
+	ProjectSection(SolutionItems) = preProject
+		test\.editorconfig = test\.editorconfig
+		test\Directory.Build.props = test\Directory.Build.props
+		test\Directory.Build.targets = test\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyRefScanner.Tests", "test\AssemblyRefScanner.Tests\AssemblyRefScanner.Tests.csproj", "{932F5171-A4F5-4126-A2BD-A927B402C75D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,9 +45,17 @@ Global
 		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{932F5171-A4F5-4126-A2BD-A927B402C75D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{932F5171-A4F5-4126-A2BD-A927B402C75D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{932F5171-A4F5-4126-A2BD-A927B402C75D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{932F5171-A4F5-4126-A2BD-A927B402C75D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE} = {C430506A-5492-445A-B593-F9B39871D8D7}
+		{932F5171-A4F5-4126-A2BD-A927B402C75D} = {A3AD093D-2488-4E7C-922E-74EE4F9E5851}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B632FC96-1F9C-4DF5-9D90-EB3A2BF982DC}

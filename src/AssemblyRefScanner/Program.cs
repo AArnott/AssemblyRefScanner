@@ -1,16 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+﻿// Copyright (c) Andrew Arnott. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace AssemblyRefScanner
 {
-    class Program
+    using System;
+    using System.Collections.Generic;
+    using System.CommandLine;
+    using System.CommandLine.Builder;
+    using System.CommandLine.Invocation;
+    using System.CommandLine.Parsing;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    internal class Program
     {
         internal static readonly CancellationToken CtrlCToken;
 
@@ -26,7 +29,7 @@ namespace AssemblyRefScanner
             CtrlCToken = cts.Token;
         }
 
-        static async Task<int> Main(string[] args)
+        private static async Task<int> Main(string[] args)
         {
             var parser = BuildCommandLine();
             return await parser.InvokeAsync(args);
@@ -63,8 +66,8 @@ namespace AssemblyRefScanner
             var typeRefSearch = new Command("type", "Searches for references to a given type.")
             {
                 searchDirOption,
-                new Option<string>(new [] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found."),
-                new Option<string>(new [] { "--namespace", "-n" }, "The namespace of the type to find references to."),
+                new Option<string>(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found."),
+                new Option<string>(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to."),
                 new Argument<string>("typeName", "The simple name of the type to find references to.") { Arity = ArgumentArity.ExactlyOne },
             };
             typeRefSearch.Handler = CommandHandler.Create<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute);

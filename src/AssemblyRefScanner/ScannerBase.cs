@@ -1,14 +1,17 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+﻿// Copyright (c) Andrew Arnott. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace AssemblyRefScanner
 {
+    using System;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Reflection.Metadata;
+    using System.Reflection.PortableExecutable;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Threading.Tasks.Dataflow;
+
     internal abstract class ScannerBase
     {
         internal ScannerBase(CancellationToken cancellationToken)

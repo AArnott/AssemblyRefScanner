@@ -1,0 +1,9 @@
+jobs:
+- job: Linux
+  pool:
+    vmImage: Ubuntu 18.04
+  steps:
+  - checkout: self
+    clean: true
+  - template: install-dependencies.yml
+  - template: dotnet.yml
