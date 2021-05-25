@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28802.258
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31324.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyRefScanner", "AssemblyRefScanner\AssemblyRefScanner.csproj", "{29BAC4B9-86FE-4785-99E6-8EAF035EC3AE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{336B0685-3599-4C91-A6A3-D75A1E8129F4}"
 	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
 		nuget.config = nuget.config
+		version.json = version.json
 	EndProjectSection
 EndProject
 Global
