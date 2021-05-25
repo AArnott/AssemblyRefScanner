@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
@@ -48,10 +49,22 @@ namespace AssemblyRefScanner
             };
             multiVersions.Handler = CommandHandler.Create<string>(new MultiVersionOfOneAssemblyNameScanner(CtrlCToken).Execute);
 
+            var embeddedSearch = new Command("embeddedTypes", "Searches for assemblies that have embedded types.")
+            {
+                searchDirOption,
+                new Argument("embeddableAssemblies")
+                {
+                    Description = "The path to an embeddable assembly.",
+                    Arity = ArgumentArity.OneOrMore,
+                },
+            };
+            embeddedSearch.Handler = CommandHandler.Create<string, IList<string>>(new EmbeddedTypeScanner(CtrlCToken).Execute);
+
             var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
             {
                 versions,
                 multiVersions,
+                embeddedSearch,
             };
             return new CommandLineBuilder(root)
                 .UseDefaults()
