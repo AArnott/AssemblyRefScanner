@@ -63,7 +63,7 @@ namespace AssemblyRefScanner
                 {
                     if (!results.IsEmpty)
                     {
-                        Console.WriteLine(assemblyPath);
+                        Console.WriteLine(TrimBasePath(assemblyPath, path));
                     }
                 });
             return await this.Scan(path, typeScanner, reporter);

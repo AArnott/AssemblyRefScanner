@@ -55,7 +55,7 @@ namespace AssemblyRefScanner
 
                         if (referencesByName.Value.Length > 1)
                         {
-                            Console.WriteLine(assemblyPath);
+                            Console.WriteLine(TrimBasePath(assemblyPath, path));
                             foreach (var reference in referencesByName.Value)
                             {
                                 Console.WriteLine($"\t{reference}");

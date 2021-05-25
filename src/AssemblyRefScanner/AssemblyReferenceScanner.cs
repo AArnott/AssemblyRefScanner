@@ -61,7 +61,7 @@ namespace AssemblyRefScanner
                     Console.WriteLine(item.Key);
                     foreach (var referencingPath in item.Value)
                     {
-                        Console.WriteLine($"\t{referencingPath}");
+                        Console.WriteLine($"\t{TrimBasePath(referencingPath, path)}");
                     }
 
                     Console.WriteLine();
