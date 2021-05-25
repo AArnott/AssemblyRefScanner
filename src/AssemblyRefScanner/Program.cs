@@ -39,7 +39,7 @@ namespace AssemblyRefScanner
         {
             var searchDirOption = new Option<string>("--path", () => Directory.GetCurrentDirectory(), "The path of the directory to search. This should be a full install of VS (i.e. all workloads) to produce complete results. If not specified, the current directory will be searched.").LegalFilePathsOnly();
 
-            var versions = new Command("assemblyVersions", "Searches for references to the assembly with the specified simple name.")
+            var versions = new Command("assembly", "Searches for references to the assembly with the specified simple name.")
             {
                 searchDirOption,
                 new Argument<string>("simpleAssemblyName", "The simple assembly name (e.g. \"StreamJsonRpc\") to search for in referenced assembly lists."),
