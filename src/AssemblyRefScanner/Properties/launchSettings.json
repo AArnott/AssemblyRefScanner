@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "AssemblyRefScanner": {
-      "commandName": "Project",
-      "commandLineArgs": "type --path \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\IntPreview\\Common7\\ide\" Task -n Microsoft.VisualStudio.Shell -a Microsoft.VisualStudio.Shell.15.0"
-    }
-  }
-}

@@ -72,12 +72,20 @@ namespace AssemblyRefScanner
             };
             typeRefSearch.Handler = CommandHandler.Create<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute);
 
+            Command targetFramework = new("targetFramework", "Groups all assemblies by TargetFramework.")
+            {
+                searchDirOption,
+                new Option<string>("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework."),
+            };
+            targetFramework.Handler = CommandHandler.Create<string, string>(new TargetFrameworkScanner(CtrlCToken).Execute);
+
             var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
             {
                 versions,
                 multiVersions,
                 embeddedSearch,
                 typeRefSearch,
+                targetFramework,
             };
             return new CommandLineBuilder(root)
                 .UseDefaults()
