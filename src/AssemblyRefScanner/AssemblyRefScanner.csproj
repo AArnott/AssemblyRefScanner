@@ -14,5 +14,10 @@
     <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20574.7" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Collections.Immutable" />
+    <Using Include="System.Reflection" />
+    <Using Include="System.Reflection.Metadata" />
+  </ItemGroup>
 
 </Project>
