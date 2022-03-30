@@ -62,7 +62,7 @@ namespace AssemblyRefScanner
                     BoundedCapacity = Environment.ProcessorCount * 4,
                     SingleProducerConstrained = true,
                     CancellationToken = this.CancellationToken,
-                    MaxDegreeOfParallelism = Environment.ProcessorCount,
+                    MaxDegreeOfParallelism = Debugger.IsAttached ? 1 : Environment.ProcessorCount,
                 });
         }
 
