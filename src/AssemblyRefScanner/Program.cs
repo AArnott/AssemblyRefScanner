@@ -34,45 +34,51 @@ internal class Program
     {
         var searchDirOption = new Option<string>("--path", () => Directory.GetCurrentDirectory(), "The path of the directory to search. This should be a full install of VS (i.e. all workloads) to produce complete results. If not specified, the current directory will be searched.").LegalFilePathsOnly();
 
-        var versions = new Command("assembly", "Searches for references to the assembly with the specified simple name.")
+        Argument<string> simpleAssemblyName = new("simpleAssemblyName", "The simple assembly name (e.g. \"StreamJsonRpc\") to search for in referenced assembly lists.");
+        Command versions = new("assembly", "Searches for references to the assembly with the specified simple name.")
         {
             searchDirOption,
-            new Argument<string>("simpleAssemblyName", "The simple assembly name (e.g. \"StreamJsonRpc\") to search for in referenced assembly lists."),
+            simpleAssemblyName,
         };
-        versions.Handler = CommandHandler.Create<string, string>(new AssemblyReferenceScanner(CtrlCToken).Execute);
+        versions.SetHandler<string, string>(new AssemblyReferenceScanner(CtrlCToken).Execute, searchDirOption, simpleAssemblyName);
 
-        var multiVersions = new Command("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
+        Command multiVersions = new("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
         {
             searchDirOption,
         };
-        multiVersions.Handler = CommandHandler.Create<string>(new MultiVersionOfOneAssemblyNameScanner(CtrlCToken).Execute);
+        multiVersions.SetHandler<string>(new MultiVersionOfOneAssemblyNameScanner(CtrlCToken).Execute, searchDirOption);
 
-        var embeddedSearch = new Command("embeddedTypes", "Searches for assemblies that have embedded types.")
+        Argument embeddableAssemblies = new("embeddableAssemblies")
+        {
+            Description = "The path to an embeddable assembly.",
+            Arity = ArgumentArity.OneOrMore,
+        };
+        Command embeddedSearch = new("embeddedTypes", "Searches for assemblies that have embedded types.")
         {
             searchDirOption,
-            new Argument("embeddableAssemblies")
-            {
-                Description = "The path to an embeddable assembly.",
-                Arity = ArgumentArity.OneOrMore,
-            },
+            embeddableAssemblies,
         };
-        embeddedSearch.Handler = CommandHandler.Create<string, IList<string>>(new EmbeddedTypeScanner(CtrlCToken).Execute);
+        embeddedSearch.SetHandler<string, IList<string>>(new EmbeddedTypeScanner(CtrlCToken).Execute, searchDirOption, embeddableAssemblies);
 
-        var typeRefSearch = new Command("type", "Searches for references to a given type.")
+        Option<string> declaringAssembly = new(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found.");
+        Option<string> namespaceArg = new(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to.");
+        Argument<string> typeName = new("typeName", "The simple name of the type to find references to.") { Arity = ArgumentArity.ExactlyOne };
+        Command typeRefSearch = new("type", "Searches for references to a given type.")
         {
             searchDirOption,
-            new Option<string>(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found."),
-            new Option<string>(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to."),
-            new Argument<string>("typeName", "The simple name of the type to find references to.") { Arity = ArgumentArity.ExactlyOne },
+            declaringAssembly,
+            namespaceArg,
+            typeName,
         };
-        typeRefSearch.Handler = CommandHandler.Create<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute);
+        typeRefSearch.SetHandler<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
 
+        Option<string> dgml = new("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework.");
         Command targetFramework = new("targetFramework", "Groups all assemblies by TargetFramework.")
         {
             searchDirOption,
-            new Option<string>("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework."),
+            dgml,
         };
-        targetFramework.Handler = CommandHandler.Create<string, string>(new TargetFrameworkScanner(CtrlCToken).Execute);
+        targetFramework.SetHandler<string, string>(new TargetFrameworkScanner(CtrlCToken).Execute, searchDirOption, dgml);
 
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {
