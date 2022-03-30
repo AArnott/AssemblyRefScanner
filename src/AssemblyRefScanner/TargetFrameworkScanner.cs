@@ -156,7 +156,8 @@ namespace AssemblyRefScanner
 
                 XElement nodesElement = new(XName.Get("Nodes", DgmlNamespace));
                 XElement linksElement = new(XName.Get("Links", DgmlNamespace));
-                XElement categoriesElement = new(XName.Get("Categories", DgmlNamespace),
+                XElement categoriesElement = new(
+                    XName.Get("Categories", DgmlNamespace),
                     TFICategory(TargetFrameworkIdentifiers.Unknown, "Red"),
                     TFICategory(TargetFrameworkIdentifiers.NETFramework, "Red"),
                     TFICategory(TargetFrameworkIdentifiers.NETCore, "Green"),
@@ -182,7 +183,8 @@ namespace AssemblyRefScanner
                     }
                 }
 
-                XElement root = new(XName.Get("DirectedGraph", DgmlNamespace),
+                XElement root = new(
+                    XName.Get("DirectedGraph", DgmlNamespace),
                     new XAttribute("Title", "Assembly dependency graph with TargetFrameworks"),
                     nodesElement,
                     linksElement,
