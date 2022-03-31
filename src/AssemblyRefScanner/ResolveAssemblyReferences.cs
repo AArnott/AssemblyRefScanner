@@ -8,7 +8,7 @@ using Nerdbank.NetStandardBridge;
 
 internal class ResolveAssemblyReferences : ScannerBase
 {
-    public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir, InvocationContext invocationContext, CancellationToken cancellationToken)
+    public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir, bool excludeRuntime, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
 
@@ -30,7 +30,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                 // When matching these, the .NET runtime disregards all details in the assembly name except the simple name, so we do too.
                 if (runtimeDir.Select(dir => Path.Combine(dir, reference.Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
                 {
-                    ReportResolvedReference(runtimeDirMatch);
+                    ReportResolvedReference(runtimeDirMatch, !excludeRuntime);
                     continue;
                 }
 
@@ -69,11 +69,15 @@ internal class ResolveAssemblyReferences : ScannerBase
             }
         }
 
-        void ReportResolvedReference(string path)
+        void ReportResolvedReference(string path, bool emitToOutput = true)
         {
             if (resolvedPaths.Add(path))
             {
-                Console.WriteLine(path);
+                if (emitToOutput)
+                {
+                    Console.WriteLine(path);
+                }
+
                 if (transitive)
                 {
                     EnumerateAndReportReferences(path);

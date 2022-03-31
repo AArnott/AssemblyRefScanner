@@ -70,7 +70,8 @@ internal class Program
         Option<bool> transitive = new("--transitive", "Resolves transitive assembly references  a = new(in addition to the default direct references).");
         Option<string> config = new("--config", "The path to an .exe.config or .dll.config file to use to resolve references.");
         Option<string> baseDir = new("--base-dir", "The path to the directory to consider the app base directory for resolving assemblies and relative paths in the .config file. If not specified, the default is the directory that contains the .config file if specified, or the directory containing the entry assembly.");
-        Option<string[]> runtimeDir = new("--runtime-dir", "The path to a .NET runtime directory where assemblies may also be resolved from.");
+        Option<string[]> runtimeDir = new("--runtime-dir", "The path to a .NET runtime directory where assemblies may also be resolved from. May be used more than once.");
+        Option<bool> excludeRuntime = new("--exclude-runtime", "Omits reporting assembly paths that are found in any of the specified runtime directories.");
         Command resolveAssemblyReferences = new("resolveReferences", "Lists paths to assemblies referenced by a given assembly.")
         {
             assemblyPath,
@@ -78,8 +79,9 @@ internal class Program
             config,
             baseDir,
             runtimeDir,
+            excludeRuntime,
         };
-        resolveAssemblyReferences.SetHandler<string, bool, string, string, string[], InvocationContext, CancellationToken>(new ResolveAssemblyReferences().Execute, assemblyPath, transitive, config, baseDir, runtimeDir);
+        resolveAssemblyReferences.SetHandler<string, bool, string, string, string[], bool, InvocationContext, CancellationToken>(new ResolveAssemblyReferences().Execute, assemblyPath, transitive, config, baseDir, runtimeDir, excludeRuntime);
 
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {
