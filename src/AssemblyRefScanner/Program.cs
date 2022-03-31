@@ -104,6 +104,7 @@ internal class Program
             targetFramework,
             resolveAssemblyReferences,
         };
+        root.Name = "refscanner";
         return new CommandLineBuilder(root)
             .UseDefaults()
             .Build();
