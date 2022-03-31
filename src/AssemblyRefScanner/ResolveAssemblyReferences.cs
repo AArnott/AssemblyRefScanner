@@ -15,14 +15,9 @@ internal class ResolveAssemblyReferences : ScannerBase
 
     public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir)
     {
-        baseDir ??= config is not null ? Path.GetDirectoryName(config) : Path.GetDirectoryName(assemblyPath);
+        baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
 
-        if (config is null)
-        {
-            throw new NotSupportedException("Support for no .config file is not yet implemented.");
-        }
-
-        NetFrameworkAssemblyResolver alc = new(config, baseDir);
+        NetFrameworkAssemblyResolver? alc = config is null ? null : new(config, baseDir);
         HashSet<string> resolvedPaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> unresolvedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -32,7 +27,7 @@ internal class ResolveAssemblyReferences : ScannerBase
         {
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
-                AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
+                AssemblyName? resolvedAssembly = alc?.GetAssemblyNameByPolicy(reference);
                 if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
                 {
                     ReportResolvedReference(resolvedAssembly.CodeBase);
@@ -40,6 +35,11 @@ internal class ResolveAssemblyReferences : ScannerBase
                 else if (runtimeDir.Select(dir => Path.Combine(dir, (resolvedAssembly ?? reference).Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
                 {
                     ReportResolvedReference(runtimeDirMatch);
+                }
+                else if (alc is null && File.Exists(Path.Combine(baseDir, reference.Name + ".dll")))
+                {
+                    // We only find assemblies in the same directory if no config file was specified.
+                    ReportResolvedReference(Path.Combine(baseDir, reference.Name + ".dll"));
                 }
                 else
                 {
