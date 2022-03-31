@@ -31,6 +31,10 @@ jobs:
     inputs:
       packageType: sdk
       version: 6.x
+  - download: CI
+    artifact: deployables-Linux
+    displayName: Download deployables-Linux artifact
+    patterns: 'deployables-Linux/*'
   - task: GitHubRelease@1
     displayName: GitHub release (create)
     inputs:
@@ -42,6 +46,7 @@ jobs:
       title: v$(resources.pipeline.CI.runName)
       isDraft: true # After running this step, visit the new draft release, edit, and publish.
       isPreRelease: $(IsPrerelease)
+      assets: $(Pipeline.Workspace)/CI/deployables-Linux/*.nupkg
       changeLogCompareToRelease: lastNonDraftRelease
       changeLogType: issueBased
       changeLogLabels: |
@@ -49,10 +54,6 @@ jobs:
           { "label" : "bug", "displayName" : "Fixes", "state" : "closed" },
           { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
         ]
-  - download: CI
-    artifact: deployables-Linux
-    displayName: Download deployables-Linux artifact
-    patterns: 'deployables-Linux/*'
   - script: dotnet nuget push $(Pipeline.Workspace)/CI/deployables-Linux/*.nupkg -s https://api.nuget.org/v3/index.json --api-key $(NuGetOrgApiKey) --skip-duplicate
     displayName: Push nuget packages
     condition: and(succeeded(), ne(variables['NuGetOrgApiKey'], ''))
