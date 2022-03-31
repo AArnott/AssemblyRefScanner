@@ -18,8 +18,14 @@ jobs:
     vmImage: ubuntu-latest
   steps:
   - checkout: none
-  - powershell: Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
-    displayName: Set pipeline name
+  - powershell: |
+      Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
+      if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
+        Write-Host "##vso[task.setvariable variable=IsPrerelease]true"
+      } else {
+        Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
+      }
+    displayName: Set up pipeline
   - task: UseDotNet@2
     displayName: Install .NET SDK
     inputs:
@@ -35,6 +41,7 @@ jobs:
       tag: v$(resources.pipeline.CI.runName)
       title: v$(resources.pipeline.CI.runName)
       isDraft: true # After running this step, visit the new draft release, edit, and publish.
+      isPreRelease: $(IsPrerelease)
       changeLogCompareToRelease: lastNonDraftRelease
       changeLogType: issueBased
       changeLogLabels: |
