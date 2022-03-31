@@ -21,21 +21,23 @@ Then refer to the tool by its CLI name: `refscanner`:
 
 ```
 PS> refscanner -h
-AssemblyRefScanner:
-  AssemblyRefScanner v1.0.4-beta+63eabf48ee
+Description:
+  AssemblyRefScanner v1.0.41-beta+8f8b7e9c74
 
 Usage:
-  AssemblyRefScanner [options] [command]
+  refscanner [command] [options]
 
 Options:
-  --version         Show version information
-  -?, -h, --help    Show help and usage information
+  --version       Show version information
+  -?, -h, --help  Show help and usage information
 
 Commands:
-  assembly <simpleAssemblyName>           Searches for references to the assembly with the specified simple name.
-  multiversions                           All assemblies that reference multiple versions of *any* assembly will be printed.
-  embeddedTypes <embeddableAssemblies>    Searches for assemblies that have embedded types.
-  type <typeName>                         Searches for references to a given type.
+  assembly <simpleAssemblyName>         Searches for references to the assembly with the specified simple name.
+  multiversions                         All assemblies that reference multiple versions of *any* assembly will be printed.
+  embeddedTypes <embeddableAssemblies>  Searches for assemblies that have embedded types.
+  type <typeName>                       Searches for references to a given type.
+  targetFramework                       Groups all assemblies by TargetFramework.
+  resolveReferences <assemblyPath>      Lists paths to assemblies referenced by a given assembly.
 ```
 
 You can then get usage help for a particular command:
