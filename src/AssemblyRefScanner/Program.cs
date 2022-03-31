@@ -40,7 +40,7 @@ internal class Program
             searchDirOption,
             simpleAssemblyName,
         };
-        versions.SetHandler<string, string>(new AssemblyReferenceScanner(CtrlCToken).Execute, searchDirOption, simpleAssemblyName);
+        versions.SetHandler<string, string>(new AssemblyReferenceScanner(CtrlCToken).Execute, simpleAssemblyName, searchDirOption);
 
         Command multiVersions = new("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
         {
