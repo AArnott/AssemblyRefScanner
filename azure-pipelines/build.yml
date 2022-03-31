@@ -9,3 +9,4 @@ jobs:
   - powershell: '& (./azure-pipelines/Get-nbgv.ps1) cloud -c'
     displayName: Set build number
   - template: dotnet.yml
+  - template: publish-deployables.yml
