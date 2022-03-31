@@ -15,14 +15,9 @@ internal class ResolveAssemblyReferences : ScannerBase
 
     public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir)
     {
-        baseDir ??= config is not null ? Path.GetDirectoryName(config) : Path.GetDirectoryName(assemblyPath);
+        baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
 
-        if (config is null)
-        {
-            throw new NotSupportedException("Support for no .config file is not yet implemented.");
-        }
-
-        NetFrameworkAssemblyResolver alc = new(config, baseDir);
+        NetFrameworkAssemblyResolver? alc = config is null ? null : new(config, baseDir);
         HashSet<string> resolvedPaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> unresolvedNames = new(StringComparer.OrdinalIgnoreCase);
 
@@ -32,18 +27,46 @@ internal class ResolveAssemblyReferences : ScannerBase
         {
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
-                AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
-                if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
-                {
-                    ReportResolvedReference(resolvedAssembly.CodeBase);
-                }
-                else if (runtimeDir.Select(dir => Path.Combine(dir, (resolvedAssembly ?? reference).Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
+                // Always try the runtime directories first, since no custom assembly resolver or .config processing
+                // will apply at runtime when the assembly is found in the runtime folder.
+                // When matching these, the .NET runtime disregards all details in the assembly name except the simple name, so we do too.
+                if (runtimeDir.Select(dir => Path.Combine(dir, reference.Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
                 {
                     ReportResolvedReference(runtimeDirMatch);
+                    continue;
+                }
+
+                if (alc is not null)
+                {
+                    try
+                    {
+                        AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
+
+                        if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
+                        {
+                            ReportResolvedReference(resolvedAssembly.CodeBase);
+                        }
+                        else
+                        {
+                            ReportUnresolvedReference(resolvedAssembly ?? reference);
+                        }
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                        ReportUnresolvedReference(reference);
+                        continue;
+                    }
+                }
+                else if (File.Exists(Path.Combine(baseDir, reference.Name + ".dll")))
+                {
+                    // We only find assemblies in the same directory if no config file was specified.
+                    ReportResolvedReference(Path.Combine(baseDir, reference.Name + ".dll"));
+                    continue;
                 }
                 else
                 {
-                    ReportUnresolvedReference(resolvedAssembly ?? reference);
+                    ReportUnresolvedReference(reference);
                 }
             }
         }
