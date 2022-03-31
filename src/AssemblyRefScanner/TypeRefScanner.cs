@@ -5,12 +5,7 @@ namespace AssemblyRefScanner;
 
 internal class TypeRefScanner : ScannerBase
 {
-    public TypeRefScanner(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
-    internal async Task<int> Execute(string path, string? declaringAssembly, string? @namespace, string typeName)
+    internal async Task Execute(string path, string? declaringAssembly, string? @namespace, string typeName, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         var scanner = this.CreateProcessAssembliesBlock(
             mdReader =>
@@ -21,7 +16,8 @@ internal class TypeRefScanner : ScannerBase
                 }
 
                 return false;
-            });
+            },
+            cancellationToken);
         var report = this.CreateReportBlock(
             scanner,
             (assemblyPath, result) =>
@@ -30,8 +26,9 @@ internal class TypeRefScanner : ScannerBase
                 {
                     Console.WriteLine(TrimBasePath(assemblyPath, path));
                 }
-            });
-        return await this.Scan(path, scanner, report);
+            },
+            cancellationToken);
+        invocationContext.ExitCode = await this.Scan(path, scanner, report, cancellationToken);
     }
 
     private static TypeReferenceHandle? GetBreakingChangedTypeReference(MetadataReader mdReader, string? declaringAssembly, string? typeNamespace, string typeName)

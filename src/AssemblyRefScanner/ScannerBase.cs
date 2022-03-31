@@ -3,19 +3,14 @@
 
 namespace AssemblyRefScanner;
 
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Reflection.PortableExecutable;
 using System.Threading.Tasks.Dataflow;
 
 internal abstract class ScannerBase
 {
-    internal ScannerBase(CancellationToken cancellationToken)
-    {
-        this.CancellationToken = cancellationToken;
-    }
-
-    protected CancellationToken CancellationToken { get; }
-
     protected static string TrimBasePath(string absolutePath, string searchPath)
     {
         if (!searchPath.EndsWith('\\'))
@@ -31,7 +26,7 @@ internal abstract class ScannerBase
         return absolutePath;
     }
 
-    protected TransformManyBlock<string, (string AssemblyPath, T Results)> CreateProcessAssembliesBlock<T>(Func<MetadataReader, T> assemblyReader)
+    protected TransformManyBlock<string, (string AssemblyPath, T Results)> CreateProcessAssembliesBlock<T>(Func<MetadataReader, T> assemblyReader, CancellationToken cancellationToken)
     {
         return new TransformManyBlock<string, (string AssemblyPath, T Results)>(
             assemblyPath =>
@@ -56,12 +51,12 @@ internal abstract class ScannerBase
                 MaxMessagesPerTask = 5,
                 BoundedCapacity = Environment.ProcessorCount * 4,
                 SingleProducerConstrained = true,
-                CancellationToken = this.CancellationToken,
+                CancellationToken = cancellationToken,
                 MaxDegreeOfParallelism = Debugger.IsAttached ? 1 : Environment.ProcessorCount,
             });
     }
 
-    protected ITargetBlock<(string AssemblyPath, T Results)> CreateReportBlock<T>(ISourceBlock<(string AssemblyPath, T Results)> previousBlock, Action<string, T> report)
+    protected ITargetBlock<(string AssemblyPath, T Results)> CreateReportBlock<T>(ISourceBlock<(string AssemblyPath, T Results)> previousBlock, Action<string, T> report, CancellationToken cancellationToken)
     {
         var block = new ActionBlock<(string AssemblyPath, T Results)>(
             tuple => report(tuple.AssemblyPath, tuple.Results),
@@ -69,7 +64,7 @@ internal abstract class ScannerBase
             {
                 BoundedCapacity = 16,
                 MaxMessagesPerTask = 5,
-                CancellationToken = this.CancellationToken,
+                CancellationToken = cancellationToken,
             });
         previousBlock.LinkTo(block, new DataflowLinkOptions { PropagateCompletion = true });
         return block;
@@ -81,8 +76,9 @@ internal abstract class ScannerBase
     /// <param name="path">The path to scan for assemblies.</param>
     /// <param name="startingBlock">The block that should receive paths to all assemblies.</param>
     /// <param name="terminalBlock">The block to await completion of.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The exit code to return from the calling command.</returns>
-    protected async Task<int> Scan(string path, ITargetBlock<string> startingBlock, IDataflowBlock terminalBlock)
+    protected async Task<int> Scan(string path, ITargetBlock<string> startingBlock, IDataflowBlock terminalBlock, CancellationToken cancellationToken)
     {
         var timer = Stopwatch.StartNew();
         int dllCount = 0;
@@ -106,7 +102,7 @@ internal abstract class ScannerBase
             await terminalBlock.Completion;
             Console.WriteLine($"All done ({dllCount} assemblies scanned in {timer.Elapsed:g}, or {dllCount / timer.Elapsed.TotalSeconds:0,0} assemblies per second)!");
         }
-        catch (OperationCanceledException) when (this.CancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             Console.Error.WriteLine("Canceled.");
             return 2;

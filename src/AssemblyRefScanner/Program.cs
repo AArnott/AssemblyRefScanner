@@ -10,23 +10,9 @@ using System.CommandLine.Parsing;
 
 internal class Program
 {
-    internal static readonly CancellationToken CtrlCToken;
-
-    static Program()
-    {
-        var cts = new CancellationTokenSource();
-        Console.CancelKeyPress += (s, e) =>
-        {
-            Console.WriteLine("Canceling...");
-            cts.Cancel();
-            e.Cancel = true;
-        };
-        CtrlCToken = cts.Token;
-    }
-
     private static async Task<int> Main(string[] args)
     {
-        var parser = BuildCommandLine();
+        Parser parser = BuildCommandLine();
         return await parser.InvokeAsync(args);
     }
 
@@ -40,13 +26,13 @@ internal class Program
             searchDirOption,
             simpleAssemblyName,
         };
-        versions.SetHandler<string, string>(new AssemblyReferenceScanner(CtrlCToken).Execute, simpleAssemblyName, searchDirOption);
+        versions.SetHandler<string, string, InvocationContext, CancellationToken>(new AssemblyReferenceScanner().Execute, simpleAssemblyName, searchDirOption);
 
         Command multiVersions = new("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
         {
             searchDirOption,
         };
-        multiVersions.SetHandler<string>(new MultiVersionOfOneAssemblyNameScanner(CtrlCToken).Execute, searchDirOption);
+        multiVersions.SetHandler<string, InvocationContext, CancellationToken>(new MultiVersionOfOneAssemblyNameScanner().Execute, searchDirOption);
 
         Argument embeddableAssemblies = new("embeddableAssemblies")
         {
@@ -58,7 +44,7 @@ internal class Program
             searchDirOption,
             embeddableAssemblies,
         };
-        embeddedSearch.SetHandler<string, IList<string>>(new EmbeddedTypeScanner(CtrlCToken).Execute, searchDirOption, embeddableAssemblies);
+        embeddedSearch.SetHandler<string, IList<string>, InvocationContext, CancellationToken>(new EmbeddedTypeScanner().Execute, searchDirOption, embeddableAssemblies);
 
         Option<string> declaringAssembly = new(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found.");
         Option<string> namespaceArg = new(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to.");
@@ -70,7 +56,7 @@ internal class Program
             namespaceArg,
             typeName,
         };
-        typeRefSearch.SetHandler<string, string, string, string>(new TypeRefScanner(CtrlCToken).Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
+        typeRefSearch.SetHandler<string, string, string, string, InvocationContext, CancellationToken>(new TypeRefScanner().Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
 
         Option<string> dgml = new("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework.");
         Command targetFramework = new("targetFramework", "Groups all assemblies by TargetFramework.")
@@ -78,7 +64,7 @@ internal class Program
             searchDirOption,
             dgml,
         };
-        targetFramework.SetHandler<string, string>(new TargetFrameworkScanner(CtrlCToken).Execute, searchDirOption, dgml);
+        targetFramework.SetHandler<string, string, InvocationContext, CancellationToken>(new TargetFrameworkScanner().Execute, searchDirOption, dgml);
 
         Argument<string> assemblyPath = new("assemblyPath", "The path to the assembly to search for assembly references.");
         Option<bool> transitive = new("--transitive", "Resolves transitive assembly references  a = new(in addition to the default direct references).");
@@ -93,7 +79,7 @@ internal class Program
             baseDir,
             runtimeDir,
         };
-        resolveAssemblyReferences.SetHandler<string, bool, string, string, string[]>(new ResolveAssemblyReferences(CtrlCToken).Execute, assemblyPath, transitive, config, baseDir, runtimeDir);
+        resolveAssemblyReferences.SetHandler<string, bool, string, string, string[], InvocationContext, CancellationToken>(new ResolveAssemblyReferences().Execute, assemblyPath, transitive, config, baseDir, runtimeDir);
 
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {

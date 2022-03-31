@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="System.Collections.Immutable" />
+    <Using Include="System.CommandLine.Invocation" />
     <Using Include="System.Reflection" />
     <Using Include="System.Reflection.Metadata" />
   </ItemGroup>

@@ -18,11 +18,6 @@ internal class TargetFrameworkScanner : ScannerBase
         new byte[] { 0xcc, 0x7b, 0x13, 0xff, 0xcd, 0x2d, 0xdd, 0x51 }, // cc7b13ffcd2ddd51
     };
 
-    public TargetFrameworkScanner(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
     private enum TargetFrameworkIdentifiers
     {
         // These are sorted in order of increasing preference.
@@ -33,70 +28,72 @@ internal class TargetFrameworkScanner : ScannerBase
         NETCore,
     }
 
-    public async Task<int> Execute(string path, string? dgml)
+    public async Task Execute(string path, string? dgml, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         CustomAttributeTypeProvider customAttributeTypeProvider = new();
-        var scanner = this.CreateProcessAssembliesBlock(mdReader =>
-        {
-            string assemblyName = mdReader.GetString(mdReader.GetAssemblyDefinition().Name);
-            bool isRuntimeAssembly = IsRuntimeAssemblyPublicKeyToken(mdReader.GetAssemblyDefinition().GetAssemblyName().GetPublicKeyToken()) || IsRuntimeAssemblyName(assemblyName);
-
-            FrameworkName? targetFramework = null;
-            foreach (CustomAttributeHandle attHandle in mdReader.CustomAttributes)
+        var scanner = this.CreateProcessAssembliesBlock(
+            mdReader =>
             {
-                CustomAttribute att = mdReader.GetCustomAttribute(attHandle);
-                if (att.Parent.Kind == HandleKind.AssemblyDefinition)
-                {
-                    if (att.Constructor.Kind == HandleKind.MemberReference)
-                    {
-                        MemberReference memberReference = mdReader.GetMemberReference((MemberReferenceHandle)att.Constructor);
-                        if (memberReference.Parent.Kind == HandleKind.TypeReference)
-                        {
-                            TypeReference typeReference = mdReader.GetTypeReference((TypeReferenceHandle)memberReference.Parent);
-                            if (mdReader.StringComparer.Equals(typeReference.Name, "TargetFrameworkAttribute"))
-                            {
-                                CustomAttributeValue<Type> value = att.DecodeValue(customAttributeTypeProvider);
-                                if (value.FixedArguments[0].Value is string tfm)
-                                {
-                                    targetFramework = new(tfm);
-                                }
+                string assemblyName = mdReader.GetString(mdReader.GetAssemblyDefinition().Name);
+                bool isRuntimeAssembly = IsRuntimeAssemblyPublicKeyToken(mdReader.GetAssemblyDefinition().GetAssemblyName().GetPublicKeyToken()) || IsRuntimeAssemblyName(assemblyName);
 
-                                break;
+                FrameworkName? targetFramework = null;
+                foreach (CustomAttributeHandle attHandle in mdReader.CustomAttributes)
+                {
+                    CustomAttribute att = mdReader.GetCustomAttribute(attHandle);
+                    if (att.Parent.Kind == HandleKind.AssemblyDefinition)
+                    {
+                        if (att.Constructor.Kind == HandleKind.MemberReference)
+                        {
+                            MemberReference memberReference = mdReader.GetMemberReference((MemberReferenceHandle)att.Constructor);
+                            if (memberReference.Parent.Kind == HandleKind.TypeReference)
+                            {
+                                TypeReference typeReference = mdReader.GetTypeReference((TypeReferenceHandle)memberReference.Parent);
+                                if (mdReader.StringComparer.Equals(typeReference.Name, "TargetFrameworkAttribute"))
+                                {
+                                    CustomAttributeValue<Type> value = att.DecodeValue(customAttributeTypeProvider);
+                                    if (value.FixedArguments[0].Value is string tfm)
+                                    {
+                                        targetFramework = new(tfm);
+                                    }
+
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            List<string> referencesList = new();
-            if (!isRuntimeAssembly)
-            {
-                foreach (AssemblyReferenceHandle refHandle in mdReader.AssemblyReferences)
+                List<string> referencesList = new();
+                if (!isRuntimeAssembly)
                 {
-                    AssemblyReference assemblyReference = mdReader.GetAssemblyReference(refHandle);
-
-                    // Skip references into the .NET runtime since those aren't particularly related to TargetFramework analysis.
-                    ReadOnlyMemory<byte> publicKeyToken = mdReader.GetBlobContent(assemblyReference.PublicKeyOrToken).AsMemory();
-                    if (!IsRuntimeAssemblyPublicKeyToken(publicKeyToken))
+                    foreach (AssemblyReferenceHandle refHandle in mdReader.AssemblyReferences)
                     {
-                        string referencedAssemblyName = mdReader.GetString(assemblyReference.Name);
-                        if (!IsRuntimeAssemblyName(referencedAssemblyName))
+                        AssemblyReference assemblyReference = mdReader.GetAssemblyReference(refHandle);
+
+                        // Skip references into the .NET runtime since those aren't particularly related to TargetFramework analysis.
+                        ReadOnlyMemory<byte> publicKeyToken = mdReader.GetBlobContent(assemblyReference.PublicKeyOrToken).AsMemory();
+                        if (!IsRuntimeAssemblyPublicKeyToken(publicKeyToken))
                         {
-                            referencesList.Add(referencedAssemblyName);
+                            string referencedAssemblyName = mdReader.GetString(assemblyReference.Name);
+                            if (!IsRuntimeAssemblyName(referencedAssemblyName))
+                            {
+                                referencesList.Add(referencedAssemblyName);
+                            }
                         }
                     }
                 }
-            }
 
-            bool IsRuntimeAssemblyPublicKeyToken(ReadOnlyMemory<byte> publicKeyToken)
-            {
-                return DotnetRuntimePublicKeyTokens.Any(m => Equals(m.Span, publicKeyToken.Span));
-            }
+                bool IsRuntimeAssemblyPublicKeyToken(ReadOnlyMemory<byte> publicKeyToken)
+                {
+                    return DotnetRuntimePublicKeyTokens.Any(m => Equals(m.Span, publicKeyToken.Span));
+                }
 
-            static bool IsRuntimeAssemblyName(string assemblyName) => assemblyName == "System" || assemblyName.StartsWith("System.", StringComparison.Ordinal);
+                static bool IsRuntimeAssemblyName(string assemblyName) => assemblyName == "System" || assemblyName.StartsWith("System.", StringComparison.Ordinal);
 
-            return new AssemblyInfo(assemblyName, targetFramework, referencesList, isRuntimeAssembly);
-        });
+                return new AssemblyInfo(assemblyName, targetFramework, referencesList, isRuntimeAssembly);
+            },
+            cancellationToken);
         Dictionary<string, AssemblyInfo> bestTargetFrameworkPerAssembly = new(StringComparer.OrdinalIgnoreCase);
         var report = this.CreateReportBlock(
             scanner,
@@ -111,11 +108,12 @@ internal class TargetFrameworkScanner : ScannerBase
                 {
                     bestTargetFrameworkPerAssembly[result.AssemblyName] = result;
                 }
-            });
+            },
+            cancellationToken);
 
-        int result = await this.Scan(path, scanner, report);
+        invocationContext.ExitCode = await this.Scan(path, scanner, report, cancellationToken);
 
-        this.CancellationToken.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
         Dictionary<TargetFrameworkIdentifiers, int> targetFrameworkPopularity = new();
         var groupedByTFM = from item in bestTargetFrameworkPerAssembly
                            orderby item.Value.AssemblyName
@@ -183,10 +181,8 @@ internal class TargetFrameworkScanner : ScannerBase
                 linksElement,
                 categoriesElement);
             using FileStream dgmlFile = new(dgml, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
-            await root.SaveAsync(dgmlFile, SaveOptions.None, this.CancellationToken);
+            await root.SaveAsync(dgmlFile, SaveOptions.None, cancellationToken);
         }
-
-        return result;
     }
 
     private static bool Equals(ReadOnlySpan<byte> array1, ReadOnlySpan<byte> array2)

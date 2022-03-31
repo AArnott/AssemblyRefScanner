@@ -8,12 +8,7 @@ using Nerdbank.NetStandardBridge;
 
 internal class ResolveAssemblyReferences : ScannerBase
 {
-    public ResolveAssemblyReferences(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
-    public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir)
+    public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
 
@@ -25,8 +20,11 @@ internal class ResolveAssemblyReferences : ScannerBase
 
         void EnumerateAndReportReferences(string assemblyPath)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Always try the runtime directories first, since no custom assembly resolver or .config processing
                 // will apply at runtime when the assembly is found in the runtime folder.
                 // When matching these, the .NET runtime disregards all details in the assembly name except the simple name, so we do too.

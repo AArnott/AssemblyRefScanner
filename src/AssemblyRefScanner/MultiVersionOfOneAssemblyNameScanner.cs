@@ -23,17 +23,13 @@ internal class MultiVersionOfOneAssemblyNameScanner : ScannerBase
         "System.IO.Compression",
     };
 
-    internal MultiVersionOfOneAssemblyNameScanner(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
-    internal async Task<int> Execute(string path)
+    internal async Task Execute(string path, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         var refReader = this.CreateProcessAssembliesBlock(
             mdReader => (from referenceHandle in mdReader.AssemblyReferences
                          let reference = mdReader.GetAssemblyReference(referenceHandle).GetAssemblyName()
-                         group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray(), StringComparer.OrdinalIgnoreCase));
+                         group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray(), StringComparer.OrdinalIgnoreCase),
+            cancellationToken);
         var aggregator = this.CreateReportBlock(
             refReader,
             (assemblyPath, results) =>
@@ -57,8 +53,9 @@ internal class MultiVersionOfOneAssemblyNameScanner : ScannerBase
                         Console.WriteLine();
                     }
                 }
-            });
+            },
+            cancellationToken);
 
-        return await this.Scan(path, refReader, aggregator);
+        invocationContext.ExitCode = await this.Scan(path, refReader, aggregator, cancellationToken);
     }
 }

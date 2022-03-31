@@ -3,16 +3,12 @@
 
 namespace AssemblyRefScanner;
 
+using System.CommandLine.Invocation;
 using System.Reflection.PortableExecutable;
 
 internal class EmbeddedTypeScanner : ScannerBase
 {
-    public EmbeddedTypeScanner(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
-    internal async Task<int> Execute(string path, IList<string> embeddableAssemblies)
+    internal async Task Execute(string path, IList<string> embeddableAssemblies, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         HashSet<string> embeddableTypeNames = new();
         foreach (string assemblyPath in embeddableAssemblies)
@@ -49,7 +45,8 @@ internal class EmbeddedTypeScanner : ScannerBase
                 }
 
                 return embeddedTypeNames.ToImmutable();
-            });
+            },
+            cancellationToken);
         var reporter = this.CreateReportBlock(
             typeScanner,
             (assemblyPath, results) =>
@@ -58,8 +55,9 @@ internal class EmbeddedTypeScanner : ScannerBase
                 {
                     Console.WriteLine(TrimBasePath(assemblyPath, path));
                 }
-            });
-        return await this.Scan(path, typeScanner, reporter);
+            },
+            cancellationToken);
+        invocationContext.ExitCode = await this.Scan(path, typeScanner, reporter, cancellationToken);
     }
 
     private static void CollectTypesFrom(HashSet<string> embeddableTypeNames, string assemblyPath)

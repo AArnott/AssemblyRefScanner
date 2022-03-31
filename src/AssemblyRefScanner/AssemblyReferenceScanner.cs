@@ -8,17 +8,13 @@ namespace AssemblyRefScanner;
 /// </summary>
 internal class AssemblyReferenceScanner : ScannerBase
 {
-    internal AssemblyReferenceScanner(CancellationToken cancellationToken)
-        : base(cancellationToken)
-    {
-    }
-
-    internal async Task<int> Execute(string simpleAssemblyName, string path)
+    internal async Task Execute(string simpleAssemblyName, string path, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         var refReader = this.CreateProcessAssembliesBlock(
             mdReader => (from referenceHandle in mdReader.AssemblyReferences
                          let reference = mdReader.GetAssemblyReference(referenceHandle).GetAssemblyName()
-                         group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray(), StringComparer.OrdinalIgnoreCase));
+                         group reference by reference.Name).ToImmutableDictionary(kv => kv.Key, kv => kv.ToImmutableArray(), StringComparer.OrdinalIgnoreCase),
+            cancellationToken);
 
         var versionsReferenced = new Dictionary<Version, List<string>>();
         var aggregator = this.CreateReportBlock(
@@ -42,10 +38,11 @@ internal class AssemblyReferenceScanner : ScannerBase
                         referencingPaths.Add(assemblyPath);
                     }
                 }
-            });
+            },
+            cancellationToken);
 
-        int exitCode = await this.Scan(path, startingBlock: refReader, terminalBlock: aggregator);
-        if (exitCode == 0)
+        invocationContext.ExitCode = await this.Scan(path, startingBlock: refReader, terminalBlock: aggregator, cancellationToken);
+        if (invocationContext.ExitCode == 0)
         {
             Console.WriteLine($"The {simpleAssemblyName} assembly is referenced as follows:");
             foreach (var item in versionsReferenced.OrderBy(kv => kv.Key))
@@ -59,7 +56,5 @@ internal class AssemblyReferenceScanner : ScannerBase
                 Console.WriteLine();
             }
         }
-
-        return exitCode;
     }
 }
