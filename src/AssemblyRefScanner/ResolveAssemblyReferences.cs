@@ -27,7 +27,18 @@ internal class ResolveAssemblyReferences : ScannerBase
         {
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
-                AssemblyName? resolvedAssembly = alc?.GetAssemblyNameByPolicy(reference);
+                AssemblyName? resolvedAssembly;
+                try
+                {
+                    resolvedAssembly = alc?.GetAssemblyNameByPolicy(reference);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+                    ReportUnresolvedReference(reference);
+                    continue;
+                }
+
                 if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
                 {
                     ReportResolvedReference(resolvedAssembly.CodeBase);
