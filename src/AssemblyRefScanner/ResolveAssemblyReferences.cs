@@ -11,6 +11,7 @@ internal class ResolveAssemblyReferences : ScannerBase
     public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir, bool excludeRuntime, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
+        TrimTrailingSlashes(runtimeDir);
 
         NetFrameworkAssemblyResolver? alc = config is null ? null : new(config, baseDir);
         HashSet<string> resolvedPaths = new(StringComparer.OrdinalIgnoreCase);
@@ -21,6 +22,13 @@ internal class ResolveAssemblyReferences : ScannerBase
         void EnumerateAndReportReferences(string assemblyPath)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            // The .NET runtime includes references to assemblies that are only needed to support .NET Framework-targeted assemblies
+            // and are therefore expected to come from the app directory. Thus, any unresolved references coming *from* the runtime directory
+            // will be considered By Design and not reported to stderr.
+            string assemblyPathDirectory = Path.GetDirectoryName(assemblyPath)!.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            bool isThisUnderRuntimeFolder = runtimeDir.Contains(assemblyPathDirectory, StringComparer.OrdinalIgnoreCase);
+
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -46,13 +54,13 @@ internal class ResolveAssemblyReferences : ScannerBase
                         }
                         else
                         {
-                            ReportUnresolvedReference(resolvedAssembly ?? reference);
+                            ReportUnresolvedReference(resolvedAssembly ?? reference, !isThisUnderRuntimeFolder);
                         }
                     }
                     catch (InvalidOperationException ex)
                     {
                         Console.Error.WriteLine(ex.Message);
-                        ReportUnresolvedReference(reference);
+                        ReportUnresolvedReference(reference, !isThisUnderRuntimeFolder);
                         continue;
                     }
                 }
@@ -64,7 +72,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                 }
                 else
                 {
-                    ReportUnresolvedReference(reference);
+                    ReportUnresolvedReference(reference, !isThisUnderRuntimeFolder);
                 }
             }
         }
@@ -85,12 +93,23 @@ internal class ResolveAssemblyReferences : ScannerBase
             }
         }
 
-        void ReportUnresolvedReference(AssemblyName reference)
+        void ReportUnresolvedReference(AssemblyName reference, bool emitToOutput)
         {
             if (reference.Name is not null && unresolvedNames.Add(reference.Name))
             {
-                Console.Error.WriteLine($"Missing referenced assembly: {reference}");
+                if (emitToOutput)
+                {
+                    Console.Error.WriteLine($"Missing referenced assembly: {reference}");
+                }
             }
+        }
+    }
+
+    private static void TrimTrailingSlashes(string[] paths)
+    {
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = paths[i].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
     }
 
