@@ -27,34 +27,46 @@ internal class ResolveAssemblyReferences : ScannerBase
         {
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
-                AssemblyName? resolvedAssembly;
-                try
+                // Always try the runtime directories first, since no custom assembly resolver or .config processing
+                // will apply at runtime when the assembly is found in the runtime folder.
+                // When matching these, the .NET runtime disregards all details in the assembly name except the simple name, so we do too.
+                if (runtimeDir.Select(dir => Path.Combine(dir, reference.Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
                 {
-                    resolvedAssembly = alc?.GetAssemblyNameByPolicy(reference);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Console.Error.WriteLine(ex.Message);
-                    ReportUnresolvedReference(reference);
+                    ReportResolvedReference(runtimeDirMatch);
                     continue;
                 }
 
-                if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
+                if (alc is not null)
                 {
-                    ReportResolvedReference(resolvedAssembly.CodeBase);
+                    try
+                    {
+                        AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
+
+                        if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
+                        {
+                            ReportResolvedReference(resolvedAssembly.CodeBase);
+                        }
+                        else
+                        {
+                            ReportUnresolvedReference(resolvedAssembly ?? reference);
+                        }
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.Error.WriteLine(ex.Message);
+                        ReportUnresolvedReference(reference);
+                        continue;
+                    }
                 }
-                else if (runtimeDir.Select(dir => Path.Combine(dir, (resolvedAssembly ?? reference).Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
-                {
-                    ReportResolvedReference(runtimeDirMatch);
-                }
-                else if (alc is null && File.Exists(Path.Combine(baseDir, reference.Name + ".dll")))
+                else if (File.Exists(Path.Combine(baseDir, reference.Name + ".dll")))
                 {
                     // We only find assemblies in the same directory if no config file was specified.
                     ReportResolvedReference(Path.Combine(baseDir, reference.Name + ".dll"));
+                    continue;
                 }
                 else
                 {
-                    ReportUnresolvedReference(resolvedAssembly ?? reference);
+                    ReportUnresolvedReference(reference);
                 }
             }
         }
