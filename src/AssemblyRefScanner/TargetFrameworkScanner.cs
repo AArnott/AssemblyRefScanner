@@ -5,6 +5,7 @@ namespace AssemblyRefScanner;
 
 using System.Runtime.Versioning;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Linq;
 
 internal class TargetFrameworkScanner : ScannerBase
@@ -28,7 +29,7 @@ internal class TargetFrameworkScanner : ScannerBase
         NETCore,
     }
 
-    public async Task Execute(string path, string? dgml, InvocationContext invocationContext, CancellationToken cancellationToken)
+    public async Task Execute(string path, string? dgml, string? json, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         CustomAttributeTypeProvider customAttributeTypeProvider = new();
         var scanner = this.CreateProcessAssembliesBlock(
@@ -104,6 +105,8 @@ internal class TargetFrameworkScanner : ScannerBase
                     return;
                 }
 
+                result.AssemblyPath = assemblyPath;
+
                 if (!bestTargetFrameworkPerAssembly.TryGetValue(result.AssemblyName, out AssemblyInfo? lastBestFound) || lastBestFound.TargetFrameworkIdentifier < result.TargetFrameworkIdentifier)
                 {
                     bestTargetFrameworkPerAssembly[result.AssemblyName] = result;
@@ -115,6 +118,14 @@ internal class TargetFrameworkScanner : ScannerBase
 
         cancellationToken.ThrowIfCancellationRequested();
         Dictionary<TargetFrameworkIdentifiers, int> targetFrameworkPopularity = new();
+
+
+        if (json is not null)
+        {
+            var serializedResults = JsonSerializer.Serialize(bestTargetFrameworkPerAssembly);
+            File.WriteAllText(json, serializedResults);
+        }
+
         var groupedByTFM = from item in bestTargetFrameworkPerAssembly
                            orderby item.Value.AssemblyName
                            group item.Value by item.Value.TargetFrameworkIdentifier into groups
@@ -232,6 +243,8 @@ internal class TargetFrameworkScanner : ScannerBase
 
     private record AssemblyInfo(string AssemblyName, FrameworkName? TargetFramework, List<string> References, bool IsRuntimeAssembly)
     {
+        public string? AssemblyPath { get; set; }
+
         internal TargetFrameworkIdentifiers TargetFrameworkIdentifier
         {
             get
