@@ -130,7 +130,10 @@ internal class TargetFrameworkScanner : ScannerBase
                 Console.WriteLine($"\t{assembly.AssemblyName}");
             }
 
-            targetFrameworkPopularity.Add(item.Key, count);
+            if (item.Key.HasValue)
+            {
+                targetFrameworkPopularity.Add(item.Key.Value, count);
+            }
         }
 
         Console.WriteLine("Summary:");
@@ -160,7 +163,7 @@ internal class TargetFrameworkScanner : ScannerBase
                 nodesElement.Add(new XElement(
                     XName.Get("Node", DgmlNamespace),
                     new XAttribute("Id", item.Value.AssemblyName),
-                    new XAttribute("Category", item.Value.TargetFrameworkIdentifier)));
+                    new XAttribute("Category", item.Value.TargetFrameworkIdentifier?.ToString() ?? item.Value.TargetFramework?.Identifier ?? string.Empty)));
 
                 foreach (string reference in item.Value.References)
                 {
@@ -232,7 +235,7 @@ internal class TargetFrameworkScanner : ScannerBase
 
     private record AssemblyInfo(string AssemblyName, FrameworkName? TargetFramework, List<string> References, bool IsRuntimeAssembly)
     {
-        internal TargetFrameworkIdentifiers TargetFrameworkIdentifier
+        internal TargetFrameworkIdentifiers? TargetFrameworkIdentifier
         {
             get
             {
@@ -242,7 +245,7 @@ internal class TargetFrameworkScanner : ScannerBase
                     ".NETStandard".Equals(this.TargetFramework.Identifier, StringComparison.OrdinalIgnoreCase) ? TargetFrameworkIdentifiers.NETStandard :
                     ".NETCoreApp".Equals(this.TargetFramework.Identifier, StringComparison.OrdinalIgnoreCase) ? TargetFrameworkIdentifiers.NETCore :
                     ".NETPortable".Equals(this.TargetFramework.Identifier, StringComparison.OrdinalIgnoreCase) ? TargetFrameworkIdentifiers.NETPortable :
-                    throw new NotSupportedException("Unrecognized target framework identifier: " + this.TargetFramework.Identifier);
+                    null;
             }
         }
     }
