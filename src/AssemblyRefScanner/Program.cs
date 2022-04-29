@@ -58,13 +58,15 @@ internal class Program
         };
         typeRefSearch.SetHandler<string, string, string, string, InvocationContext, CancellationToken>(new TypeRefScanner().Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
 
+        Option<string> json = new("--json", "The path to a .json file that will contain the raw output of all assemblies scanned.");
         Option<string> dgml = new("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework.");
         Command targetFramework = new("targetFramework", "Groups all assemblies by TargetFramework.")
         {
             searchDirOption,
             dgml,
+            json,
         };
-        targetFramework.SetHandler<string, string, InvocationContext, CancellationToken>(new TargetFrameworkScanner().Execute, searchDirOption, dgml);
+        targetFramework.SetHandler<string, string, string, InvocationContext, CancellationToken>(new TargetFrameworkScanner().Execute, searchDirOption, dgml, json);
 
         Argument<string> assemblyPath = new("assemblyPath", "The path to the assembly to search for assembly references.");
         Option<bool> transitive = new("--transitive", "Resolves transitive assembly references  a = new(in addition to the default direct references).");
