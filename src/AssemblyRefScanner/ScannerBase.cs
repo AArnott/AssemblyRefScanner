@@ -3,8 +3,6 @@
 
 namespace AssemblyRefScanner;
 
-using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Reflection.PortableExecutable;
 using System.Threading.Tasks.Dataflow;
@@ -81,22 +79,30 @@ internal abstract class ScannerBase
     protected async Task<int> Scan(string path, ITargetBlock<string> startingBlock, IDataflowBlock terminalBlock, CancellationToken cancellationToken)
     {
         var timer = Stopwatch.StartNew();
-        int dllCount = 0;
-        try
+        async Task<int> PopulateStartingBlockAsync(CancellationToken cancellationToken)
         {
-            foreach (var file in Directory.EnumerateFiles(path, "*.dll", SearchOption.AllDirectories))
+            int dllCount = 0;
+            try
             {
-                await startingBlock.SendAsync(file);
-                dllCount++;
+                foreach (var file in Directory.EnumerateFiles(path, "*.dll", SearchOption.AllDirectories))
+                {
+                    await startingBlock.SendAsync(file, cancellationToken);
+                    dllCount++;
+                }
+
+                startingBlock.Complete();
+            }
+            catch (Exception ex)
+            {
+                startingBlock.Fault(ex);
             }
 
-            startingBlock.Complete();
-        }
-        catch (Exception ex)
-        {
-            startingBlock.Fault(ex);
+            return dllCount;
         }
 
+        using CancellationTokenSource faultLinkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _ = terminalBlock.Completion.ContinueWith(_ => faultLinkedTokenSource.Cancel(), cancellationToken, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+        int dllCount = await PopulateStartingBlockAsync(faultLinkedTokenSource.Token);
         try
         {
             await terminalBlock.Completion;
