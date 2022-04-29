@@ -119,7 +119,6 @@ internal class TargetFrameworkScanner : ScannerBase
         cancellationToken.ThrowIfCancellationRequested();
         Dictionary<TargetFrameworkIdentifiers, int> targetFrameworkPopularity = new();
 
-
         if (json is not null)
         {
             var serializedResults = JsonSerializer.Serialize(bestTargetFrameworkPerAssembly);
