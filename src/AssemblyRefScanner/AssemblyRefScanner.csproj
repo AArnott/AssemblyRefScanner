@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Validation" Version="17.0.43" />
+    <PackageReference Include="Microsoft.VisualStudio.Validation" Version="17.0.53" />
     <PackageReference Include="Nerdbank.NetStandardBridge" Version="1.1.9-alpha" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
   </ItemGroup>
