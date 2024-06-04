@@ -25,18 +25,18 @@ jobs:
       } else {
         Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
       }
-    displayName: Set up pipeline
+    displayName: ⚙ Set up pipeline
   - task: UseDotNet@2
-    displayName: Install .NET SDK
+    displayName: ⚙ Install .NET SDK
     inputs:
       packageType: sdk
       version: 6.x
   - download: CI
     artifact: deployables-Linux
-    displayName: Download deployables-Linux artifact
+    displayName: 🔻 Download deployables-Linux artifact
     patterns: 'deployables-Linux/*'
   - task: GitHubRelease@1
-    displayName: GitHub release (create)
+    displayName: 📢 GitHub release (create)
     inputs:
       gitHubConnection: github.com_AArnott_OAuth
       repositoryName: $(Build.Repository.Name)
@@ -51,9 +51,10 @@ jobs:
       changeLogType: issueBased
       changeLogLabels: |
         [
+          { "label" : "breaking change", "displayName" : "Breaking changes", "state" : "closed" },
           { "label" : "bug", "displayName" : "Fixes", "state" : "closed" },
           { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
         ]
   - script: dotnet nuget push $(Pipeline.Workspace)/CI/deployables-Linux/*.nupkg -s https://api.nuget.org/v3/index.json --api-key $(NuGetOrgApiKey) --skip-duplicate
-    displayName: Push nuget packages
+    displayName: 📦 Push packages to nuget.org
     condition: and(succeeded(), ne(variables['NuGetOrgApiKey'], ''))

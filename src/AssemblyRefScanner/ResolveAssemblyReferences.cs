@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace AssemblyRefScanner;
-
 using System.Reflection.PortableExecutable;
 using Nerdbank.NetStandardBridge;
+
+namespace AssemblyRefScanner;
 
 internal class ResolveAssemblyReferences : ScannerBase
 {
