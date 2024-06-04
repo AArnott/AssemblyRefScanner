@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace AssemblyRefScanner;
-
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
+
+namespace AssemblyRefScanner;
 
 internal class TargetFrameworkScanner : ScannerBase
 {
@@ -177,13 +177,10 @@ internal class TargetFrameworkScanner : ScannerBase
 
                 foreach (string reference in item.Value.References)
                 {
-                    if (dgml is not null)
-                    {
-                        linksElement.Add(new XElement(
-                            XName.Get("Link", DgmlNamespace),
-                            new XAttribute("Source", item.Value.AssemblyName),
-                            new XAttribute("Target", reference)));
-                    }
+                    linksElement.Add(new XElement(
+                        XName.Get("Link", DgmlNamespace),
+                        new XAttribute("Source", item.Value.AssemblyName),
+                        new XAttribute("Target", reference)));
                 }
             }
 

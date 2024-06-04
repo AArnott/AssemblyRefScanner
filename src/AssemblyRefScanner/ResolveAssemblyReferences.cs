@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace AssemblyRefScanner;
-
 using System.Reflection.PortableExecutable;
 using Nerdbank.NetStandardBridge;
+
+namespace AssemblyRefScanner;
 
 internal class ResolveAssemblyReferences : ScannerBase
 {
@@ -48,6 +48,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                     {
                         AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
 
+#pragma warning disable SYSLIB0044 // Type or member is obsolete
                         if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
                         {
                             ReportResolvedReference(resolvedAssembly.CodeBase);
@@ -56,6 +57,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                         {
                             ReportUnresolvedReference(resolvedAssembly ?? reference, !isThisUnderRuntimeFolder);
                         }
+#pragma warning restore SYSLIB0044 // Type or member is obsolete
                     }
                     catch (InvalidOperationException ex)
                     {
