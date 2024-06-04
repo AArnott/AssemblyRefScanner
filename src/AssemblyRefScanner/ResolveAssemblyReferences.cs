@@ -48,6 +48,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                     {
                         AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
 
+#pragma warning disable SYSLIB0044 // Type or member is obsolete
                         if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
                         {
                             ReportResolvedReference(resolvedAssembly.CodeBase);
@@ -56,6 +57,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                         {
                             ReportUnresolvedReference(resolvedAssembly ?? reference, !isThisUnderRuntimeFolder);
                         }
+#pragma warning restore SYSLIB0044 // Type or member is obsolete
                     }
                     catch (InvalidOperationException ex)
                     {

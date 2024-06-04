@@ -3,7 +3,7 @@
     <ToolCommandName>refscanner</ToolCommandName>
     <PackAsTool>True</PackAsTool>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <Description>An assembly, type and member scanner.</Description>
   </PropertyGroup>
