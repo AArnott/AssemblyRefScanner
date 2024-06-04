@@ -29,7 +29,7 @@ internal class TargetFrameworkScanner : ScannerBase
         NETCore,
     }
 
-    public async Task Execute(string path, string? dgml, string? json, InvocationContext invocationContext, CancellationToken cancellationToken)
+    public async Task Execute(string path, string? dgml, string? json, bool includeRuntimeAssemblies, InvocationContext invocationContext, CancellationToken cancellationToken)
     {
         CustomAttributeTypeProvider customAttributeTypeProvider = new();
         var scanner = this.CreateProcessAssembliesBlock(
@@ -66,22 +66,14 @@ internal class TargetFrameworkScanner : ScannerBase
                 }
 
                 List<string> referencesList = new();
-                if (!isRuntimeAssembly)
+                foreach (AssemblyReferenceHandle refHandle in mdReader.AssemblyReferences)
                 {
-                    foreach (AssemblyReferenceHandle refHandle in mdReader.AssemblyReferences)
-                    {
-                        AssemblyReference assemblyReference = mdReader.GetAssemblyReference(refHandle);
+                    AssemblyReference assemblyReference = mdReader.GetAssemblyReference(refHandle);
 
-                        // Skip references into the .NET runtime since those aren't particularly related to TargetFramework analysis.
-                        ReadOnlyMemory<byte> publicKeyToken = mdReader.GetBlobContent(assemblyReference.PublicKeyOrToken).AsMemory();
-                        if (!IsRuntimeAssemblyPublicKeyToken(publicKeyToken))
-                        {
-                            string referencedAssemblyName = mdReader.GetString(assemblyReference.Name);
-                            if (!IsRuntimeAssemblyName(referencedAssemblyName))
-                            {
-                                referencesList.Add(referencedAssemblyName);
-                            }
-                        }
+                    string referencedAssemblyName = mdReader.GetString(assemblyReference.Name);
+                    if (!IsRuntimeAssemblyName(referencedAssemblyName))
+                    {
+                        referencesList.Add(referencedAssemblyName);
                     }
                 }
 
@@ -100,7 +92,12 @@ internal class TargetFrameworkScanner : ScannerBase
             scanner,
             (assemblyPath, result) =>
             {
-                if (result.AssemblyName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) || result.IsRuntimeAssembly)
+                if (result.AssemblyName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                if (!includeRuntimeAssemblies && result.IsRuntimeAssembly)
                 {
                     return;
                 }
@@ -156,6 +153,7 @@ internal class TargetFrameworkScanner : ScannerBase
 
         if (dgml is not null)
         {
+            const string RuntimeAssemblyCategory = "IsRuntimeAssembly";
             static XElement TFICategory(TargetFrameworkIdentifiers identifier, string color) => new(XName.Get("Category", DgmlNamespace), new XAttribute("Id", identifier), new XAttribute("Background", color));
 
             XElement nodesElement = new(XName.Get("Nodes", DgmlNamespace));
@@ -166,21 +164,32 @@ internal class TargetFrameworkScanner : ScannerBase
                 TFICategory(TargetFrameworkIdentifiers.NETFramework, "Red"),
                 TFICategory(TargetFrameworkIdentifiers.NETCore, "Green"),
                 TFICategory(TargetFrameworkIdentifiers.NETStandard, "LightGreen"),
-                TFICategory(TargetFrameworkIdentifiers.NETPortable, "Lime"));
+                TFICategory(TargetFrameworkIdentifiers.NETPortable, "Lime"),
+                new XElement(XName.Get("Category", DgmlNamespace), new XAttribute("Id", RuntimeAssemblyCategory), new XAttribute("Icon", "pack://application:,,,/Microsoft.VisualStudio.Progression.GraphControl;component/Icons/Library.png")));
 
             foreach (KeyValuePair<string, AssemblyInfo> item in bestTargetFrameworkPerAssembly)
             {
-                nodesElement.Add(new XElement(
+                XElement node = new(
                     XName.Get("Node", DgmlNamespace),
                     new XAttribute("Id", item.Value.AssemblyName),
-                    new XAttribute("Category", item.Value.TargetFrameworkIdentifier?.ToString() ?? item.Value.TargetFramework?.Identifier ?? string.Empty)));
+                    new XAttribute("Category", item.Value.TargetFrameworkIdentifier?.ToString() ?? item.Value.TargetFramework?.Identifier ?? string.Empty));
+                if (item.Value.IsRuntimeAssembly)
+                {
+                    node.Add(new XElement(XName.Get("Category", DgmlNamespace), new XAttribute("Ref", RuntimeAssemblyCategory)));
+                }
+
+                nodesElement.Add(node);
 
                 foreach (string reference in item.Value.References)
                 {
-                    linksElement.Add(new XElement(
-                        XName.Get("Link", DgmlNamespace),
-                        new XAttribute("Source", item.Value.AssemblyName),
-                        new XAttribute("Target", reference)));
+                    // Only create the edge if the target node is an assembly that was scanned.
+                    if (bestTargetFrameworkPerAssembly.ContainsKey(reference))
+                    {
+                        linksElement.Add(new XElement(
+                            XName.Get("Link", DgmlNamespace),
+                            new XAttribute("Source", item.Value.AssemblyName),
+                            new XAttribute("Target", reference)));
+                    }
                 }
             }
 
