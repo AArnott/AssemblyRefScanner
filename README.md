@@ -14,7 +14,7 @@ This tool will very quickly scan an entire directory tree for all managed assemb
 Install or update the CLI tool with:
 
 ```
-dotnet tool update -g AssemblyRefScanner --prerelease
+dotnet tool update -g AssemblyRefScanner
 ```
 
 Then refer to the tool by its CLI name: `refscanner`:
