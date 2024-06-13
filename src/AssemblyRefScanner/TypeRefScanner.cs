@@ -33,24 +33,9 @@ internal class TypeRefScanner : ScannerBase
 
     private static TypeReferenceHandle? GetBreakingChangedTypeReference(MetadataReader mdReader, string? declaringAssembly, string? typeNamespace, string typeName)
     {
-        if (declaringAssembly is object)
+        if (declaringAssembly is not null && !HasAssemblyReference(mdReader, declaringAssembly))
         {
-            bool found = false;
-            foreach (AssemblyReferenceHandle refHandle in mdReader.AssemblyReferences)
-            {
-                AssemblyReference assemblyReference = mdReader.GetAssemblyReference(refHandle);
-                AssemblyName an = assemblyReference.GetAssemblyName();
-                if (string.Equals(an.Name, declaringAssembly, StringComparison.OrdinalIgnoreCase))
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                return null;
-            }
+            return null;
         }
 
         foreach (TypeReferenceHandle typeRefHandle in mdReader.TypeReferences)

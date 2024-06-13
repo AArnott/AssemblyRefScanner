@@ -24,6 +24,20 @@ internal abstract class ScannerBase
         return absolutePath;
     }
 
+    protected static bool HasAssemblyReference(MetadataReader reader, string simpleAssemblyName)
+    {
+        foreach (AssemblyReferenceHandle handle in reader.AssemblyReferences)
+        {
+            AssemblyReference reference = reader.GetAssemblyReference(handle);
+            if (reader.StringComparer.Equals(reference.Name, simpleAssemblyName, ignoreCase: true))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected TransformManyBlock<string, (string AssemblyPath, T Results)> CreateProcessAssembliesBlock<T>(Func<MetadataReader, T> assemblyReader, CancellationToken cancellationToken)
     {
         return new TransformManyBlock<string, (string AssemblyPath, T Results)>(

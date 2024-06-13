@@ -22,7 +22,7 @@ Then refer to the tool by its CLI name: `refscanner`:
 ```
 PS> refscanner -h
 Description:
-  AssemblyRefScanner v1.0.41-beta+8f8b7e9c74
+  AssemblyRefScanner v1.0.60-beta+a3320d6221
 
 Usage:
   refscanner [command] [options]
@@ -35,6 +35,7 @@ Commands:
   assembly <simpleAssemblyName>         Searches for references to the assembly with the specified simple name.
   multiversions                         All assemblies that reference multiple versions of *any* assembly will be printed.
   embeddedTypes <embeddableAssemblies>  Searches for assemblies that have embedded types.
+  api <docID>                           Searches for references to a given type or member.
   type <typeName>                       Searches for references to a given type.
   targetFramework                       Groups all assemblies by TargetFramework.
   resolveReferences <assemblyPath>      Lists paths to assemblies referenced by a given assembly.

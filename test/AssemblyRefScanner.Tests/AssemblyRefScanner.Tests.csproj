@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace />
   </PropertyGroup>
 
@@ -15,4 +16,10 @@
     <PackageReference Include="xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="AssemblyRefScanner" />
+    <Using Include="Xunit" />
+    <Using Include="Xunit.Abstractions" />
+  </ItemGroup>
+  
 </Project>
