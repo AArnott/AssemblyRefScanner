@@ -46,7 +46,7 @@ internal class Program
         };
         embeddedSearch.SetHandler<string, IList<string>, InvocationContext, CancellationToken>(new EmbeddedTypeScanner().Execute, searchDirOption, embeddableAssemblies);
 
-        Option<string> declaringAssembly = new(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the type whose references are to be found.");
+        Option<string> declaringAssembly = new(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the API whose references are to be found.");
         Option<string> namespaceArg = new(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to.");
         Argument<string> typeName = new("typeName", "The simple name of the type to find references to.") { Arity = ArgumentArity.ExactlyOne };
         Command typeRefSearch = new("type", "Searches for references to a given type.")
@@ -57,6 +57,15 @@ internal class Program
             typeName,
         };
         typeRefSearch.SetHandler<string, string, string, string, InvocationContext, CancellationToken>(new TypeRefScanner().Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
+
+        Argument<string[]> docId = new("docID", "The DocID that identifies the API member to search for references to. A DocID for a given API may be obtained by compiling a C# program with GenerateDocumentationFile=true that references the API using <see cref=\"the-api\" /> and then inspecting the compiler-generated .xml file for that reference.") { Arity = ArgumentArity.OneOrMore };
+        Command apiRefSearch = new("api", "Searches for references to a given type or member.")
+        {
+            searchDirOption,
+            declaringAssembly,
+            docId,
+        };
+        apiRefSearch.SetHandler<string, string, string[], InvocationContext, CancellationToken>(new ApiRefScanner().Execute, searchDirOption, declaringAssembly, docId);
 
         Option<string> json = new("--json", "The path to a .json file that will contain the raw output of all assemblies scanned.");
         Option<string> dgml = new("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework.");
@@ -92,6 +101,7 @@ internal class Program
             versions,
             multiVersions,
             embeddedSearch,
+            apiRefSearch,
             typeRefSearch,
             targetFramework,
             resolveAssemblyReferences,
