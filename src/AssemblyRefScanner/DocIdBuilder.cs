@@ -182,7 +182,7 @@ public class DocIdBuilder(MetadataReader mdReader)
                     builder.Append('.');
                 }
 
-                builder.Append(genericInstanceType.GenericType.Name);
+                builder.Append(genericInstanceType.GenericType.NameWithoutArity);
                 builder.Append('{');
 
                 foreach (var genericArgument in genericInstanceType.TypeArguments)

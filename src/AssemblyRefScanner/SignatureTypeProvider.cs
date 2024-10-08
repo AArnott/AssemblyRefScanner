@@ -62,12 +62,20 @@ internal abstract class NamedTypeHandleInfo : TypeHandleInfo
     /// <summary>
     /// Gets the type name (without any arity suffix).
     /// </summary>
+    internal ReadOnlyMemory<char> NameWithoutArity => TrimAritySuffix(this.Name);
+
+    /// <summary>
+    /// Gets the type name.
+    /// </summary>
     internal abstract ReadOnlyMemory<char> Name { get; }
 
     /// <summary>
     /// Gets the type that nests this one.
     /// </summary>
     internal abstract TypeHandleInfo? NestingType { get; }
+
+    private static ReadOnlyMemory<char> TrimAritySuffix(ReadOnlyMemory<char> name)
+        => name.Span.LastIndexOf('`') is int index && index >= 0 ? name[..index] : name;
 }
 
 internal class DefinitionTypeHandleInfo(MetadataReader reader, TypeDefinitionHandle handle) : NamedTypeHandleInfo
