@@ -8,7 +8,11 @@ namespace AssemblyRefScanner;
 /// </summary>
 internal class AssemblyReferenceScanner : ScannerBase
 {
-    internal async Task Execute(string simpleAssemblyName, string path, InvocationContext invocationContext, CancellationToken cancellationToken)
+    internal required string SimpleAssemblyName { get; init; }
+
+    internal required string Path { get; init; }
+
+    internal async Task<int> Execute(CancellationToken cancellationToken)
     {
         var refReader = this.CreateProcessAssembliesBlock(
             mdReader => (from referenceHandle in mdReader.AssemblyReferences
@@ -21,7 +25,7 @@ internal class AssemblyReferenceScanner : ScannerBase
             refReader,
             (assemblyPath, results) =>
             {
-                if (results.TryGetValue(simpleAssemblyName, out ImmutableArray<AssemblyName> interestingRefs))
+                if (results.TryGetValue(this.SimpleAssemblyName, out ImmutableArray<AssemblyName> interestingRefs))
                 {
                     foreach (var reference in interestingRefs)
                     {
@@ -41,20 +45,22 @@ internal class AssemblyReferenceScanner : ScannerBase
             },
             cancellationToken);
 
-        invocationContext.ExitCode = await this.Scan(path, startingBlock: refReader, terminalBlock: aggregator, cancellationToken);
-        if (invocationContext.ExitCode == 0)
+        int exitCode = await this.Scan(this.Path, startingBlock: refReader, terminalBlock: aggregator, cancellationToken);
+        if (exitCode == 0)
         {
-            Console.WriteLine($"The {simpleAssemblyName} assembly is referenced as follows:");
+            Console.WriteLine($"The {this.SimpleAssemblyName} assembly is referenced as follows:");
             foreach (var item in versionsReferenced.OrderBy(kv => kv.Key))
             {
                 Console.WriteLine(item.Key);
                 foreach (var referencingPath in item.Value)
                 {
-                    Console.WriteLine($"\t{TrimBasePath(referencingPath, path)}");
+                    Console.WriteLine($"\t{TrimBasePath(referencingPath, this.Path)}");
                 }
 
                 Console.WriteLine();
             }
         }
+
+        return exitCode;
     }
 }

@@ -29,7 +29,15 @@ internal class TargetFrameworkScanner : ScannerBase
         NETCore,
     }
 
-    public async Task Execute(string path, string? dgml, string? json, bool includeRuntimeAssemblies, InvocationContext invocationContext, CancellationToken cancellationToken)
+    internal required string Path { get; init; }
+
+    internal required string? Dgml { get; init; }
+
+    internal required string? Json { get; init; }
+
+    internal required bool IncludeRuntimeAssemblies { get; init; }
+
+    public async Task<int> Execute(CancellationToken cancellationToken)
     {
         CustomAttributeTypeProvider customAttributeTypeProvider = new();
         var scanner = this.CreateProcessAssembliesBlock(
@@ -97,7 +105,7 @@ internal class TargetFrameworkScanner : ScannerBase
                     return;
                 }
 
-                if (!includeRuntimeAssemblies && result.IsRuntimeAssembly)
+                if (!this.IncludeRuntimeAssemblies && result.IsRuntimeAssembly)
                 {
                     return;
                 }
@@ -111,15 +119,15 @@ internal class TargetFrameworkScanner : ScannerBase
             },
             cancellationToken);
 
-        invocationContext.ExitCode = await this.Scan(path, scanner, report, cancellationToken);
+        int exitCode = await this.Scan(this.Path, scanner, report, cancellationToken);
 
         cancellationToken.ThrowIfCancellationRequested();
         Dictionary<TargetFrameworkIdentifiers, int> targetFrameworkPopularity = new();
 
-        if (json is not null)
+        if (this.Json is not null)
         {
             var serializedResults = JsonSerializer.Serialize(bestTargetFrameworkPerAssembly);
-            File.WriteAllText(json, serializedResults);
+            File.WriteAllText(this.Json, serializedResults);
         }
 
         var groupedByTFM = from item in bestTargetFrameworkPerAssembly
@@ -151,7 +159,7 @@ internal class TargetFrameworkScanner : ScannerBase
 
         Console.WriteLine($"Total:{bestTargetFrameworkPerAssembly.Count,23}");
 
-        if (dgml is not null)
+        if (this.Dgml is not null)
         {
             const string RuntimeAssemblyCategory = "IsRuntimeAssembly";
             static XElement TFICategory(TargetFrameworkIdentifiers identifier, string color) => new(XName.Get("Category", DgmlNamespace), new XAttribute("Id", identifier), new XAttribute("Background", color));
@@ -199,9 +207,11 @@ internal class TargetFrameworkScanner : ScannerBase
                 nodesElement,
                 linksElement,
                 categoriesElement);
-            using FileStream dgmlFile = new(dgml, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+            using FileStream dgmlFile = new(this.Dgml, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
             await root.SaveAsync(dgmlFile, SaveOptions.None, cancellationToken);
         }
+
+        return exitCode;
     }
 
     private static bool Equals(ReadOnlySpan<byte> array1, ReadOnlySpan<byte> array2)

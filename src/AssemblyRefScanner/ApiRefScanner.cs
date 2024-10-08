@@ -5,14 +5,20 @@ namespace AssemblyRefScanner;
 
 internal class ApiRefScanner : ScannerBase
 {
-    internal async Task Execute(string path, string? declaringAssembly, string[] docIds, InvocationContext invocationContext, CancellationToken cancellationToken)
+    internal required string Path { get; init; }
+
+    internal required string? DeclaringAssembly { get; init; }
+
+    internal required string[] DocIds { get; init; }
+
+    internal async Task<int> Execute(CancellationToken cancellationToken)
     {
-        DocId.Descriptor[] descriptors = [.. docIds.Select(DocId.Parse)];
+        DocId.Descriptor[] descriptors = [.. this.DocIds.Select(DocId.Parse)];
         var scanner = this.CreateProcessAssembliesBlock(
             mdReader =>
             {
                 // Skip assemblies that don't reference the declaring assembly.
-                if (declaringAssembly is not null && !HasAssemblyReference(mdReader, declaringAssembly))
+                if (this.DeclaringAssembly is not null && !HasAssemblyReference(mdReader, this.DeclaringAssembly))
                 {
                     return false;
                 }
@@ -26,11 +32,11 @@ internal class ApiRefScanner : ScannerBase
             {
                 if (result)
                 {
-                    Console.WriteLine(TrimBasePath(assemblyPath, path));
+                    Console.WriteLine(TrimBasePath(assemblyPath, this.Path));
                 }
             },
             cancellationToken);
-        invocationContext.ExitCode = await this.Scan(path, scanner, report, cancellationToken);
+        return await this.Scan(this.Path, scanner, report, cancellationToken);
     }
 
     private static bool HasReferenceTo(MetadataReader referencingAssemblyReader, DocId.Descriptor api)

@@ -26,15 +26,24 @@ internal class Program
             searchDirOption,
             simpleAssemblyName,
         };
-        versions.SetHandler<string, string, InvocationContext, CancellationToken>(new AssemblyReferenceScanner().Execute, simpleAssemblyName, searchDirOption);
+        versions.SetHandler(
+            async context => context.ExitCode = await new AssemblyReferenceScanner
+            {
+                Path = context.ParseResult.GetValueForOption(searchDirOption)!,
+                SimpleAssemblyName = context.ParseResult.GetValueForArgument(simpleAssemblyName),
+            }.Execute(context.GetCancellationToken()));
 
         Command multiVersions = new("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
         {
             searchDirOption,
         };
-        multiVersions.SetHandler<string, InvocationContext, CancellationToken>(new MultiVersionOfOneAssemblyNameScanner().Execute, searchDirOption);
+        multiVersions.SetHandler(
+            async context => context.ExitCode = await new MultiVersionOfOneAssemblyNameScanner
+            {
+                Path = context.ParseResult.GetValueForArgument(simpleAssemblyName),
+            }.Execute(context.GetCancellationToken()));
 
-        Argument embeddableAssemblies = new("embeddableAssemblies")
+        Argument<IList<string>> embeddableAssemblies = new("embeddableAssemblies")
         {
             Description = "The path to an embeddable assembly.",
             Arity = ArgumentArity.OneOrMore,
@@ -44,7 +53,12 @@ internal class Program
             searchDirOption,
             embeddableAssemblies,
         };
-        embeddedSearch.SetHandler<string, IList<string>, InvocationContext, CancellationToken>(new EmbeddedTypeScanner().Execute, searchDirOption, embeddableAssemblies);
+        embeddedSearch.SetHandler(
+            async context => context.ExitCode = await new EmbeddedTypeScanner
+            {
+                Path = context.ParseResult.GetValueForOption(searchDirOption)!,
+                EmbeddableAssemblies = context.ParseResult.GetValueForArgument(embeddableAssemblies),
+            }.Execute(context.GetCancellationToken()));
 
         Option<string> declaringAssembly = new(new string[] { "--declaringAssembly", "-a" }, "The simple name of the assembly that declares the API whose references are to be found.");
         Option<string> namespaceArg = new(new string[] { "--namespace", "-n" }, "The namespace of the type to find references to.");
@@ -56,7 +70,14 @@ internal class Program
             namespaceArg,
             typeName,
         };
-        typeRefSearch.SetHandler<string, string, string, string, InvocationContext, CancellationToken>(new TypeRefScanner().Execute, searchDirOption, declaringAssembly, namespaceArg, typeName);
+        typeRefSearch.SetHandler(
+            async context => context.ExitCode = await new TypeRefScanner
+            {
+                Path = context.ParseResult.GetValueForOption(searchDirOption)!,
+                DeclaringAssembly = context.ParseResult.GetValueForOption(declaringAssembly),
+                Namespace = context.ParseResult.GetValueForOption(namespaceArg),
+                TypeName = context.ParseResult.GetValueForArgument(typeName),
+            }.Execute(context.GetCancellationToken()));
 
         Argument<string[]> docId = new("docID", "The DocID that identifies the API member to search for references to. A DocID for a given API may be obtained by compiling a C# program with GenerateDocumentationFile=true that references the API using <see cref=\"the-api\" /> and then inspecting the compiler-generated .xml file for that reference.") { Arity = ArgumentArity.OneOrMore };
         Command apiRefSearch = new("api", "Searches for references to a given type or member.")
@@ -65,7 +86,13 @@ internal class Program
             declaringAssembly,
             docId,
         };
-        apiRefSearch.SetHandler<string, string, string[], InvocationContext, CancellationToken>(new ApiRefScanner().Execute, searchDirOption, declaringAssembly, docId);
+        apiRefSearch.SetHandler(
+            async context => context.ExitCode = await new ApiRefScanner
+            {
+                Path = context.ParseResult.GetValueForOption(searchDirOption)!,
+                DeclaringAssembly = context.ParseResult.GetValueForOption(declaringAssembly),
+                DocIds = context.ParseResult.GetValueForArgument(docId),
+            }.Execute(context.GetCancellationToken()));
 
         Option<string> json = new("--json", "The path to a .json file that will contain the raw output of all assemblies scanned.");
         Option<string> dgml = new("--dgml", "The path to a .dgml file to be generated with all assemblies graphed with their dependencies and identified by TargetFramework.");
@@ -77,7 +104,14 @@ internal class Program
             json,
             includeRuntimeAssemblies,
         };
-        targetFramework.SetHandler<string, string, string, bool, InvocationContext, CancellationToken>(new TargetFrameworkScanner().Execute, searchDirOption, dgml, json, includeRuntimeAssemblies);
+        targetFramework.SetHandler(
+            async context => context.ExitCode = await new TargetFrameworkScanner
+            {
+                Path = context.ParseResult.GetValueForOption(searchDirOption)!,
+                Dgml = context.ParseResult.GetValueForOption(dgml),
+                Json = context.ParseResult.GetValueForOption(json),
+                IncludeRuntimeAssemblies = context.ParseResult.GetValueForOption(includeRuntimeAssemblies),
+            }.Execute(context.GetCancellationToken()));
 
         Argument<string> assemblyPath = new("assemblyPath", "The path to the assembly to search for assembly references.");
         Option<bool> transitive = new("--transitive", "Resolves transitive assembly references  a = new(in addition to the default direct references).");
@@ -94,7 +128,16 @@ internal class Program
             runtimeDir,
             excludeRuntime,
         };
-        resolveAssemblyReferences.SetHandler<string, bool, string, string, string[], bool, InvocationContext, CancellationToken>(new ResolveAssemblyReferences().Execute, assemblyPath, transitive, config, baseDir, runtimeDir, excludeRuntime);
+        resolveAssemblyReferences.SetHandler(
+            context => new ResolveAssemblyReferences
+            {
+                AssemblyPath = context.ParseResult.GetValueForArgument(assemblyPath),
+                Transitive = context.ParseResult.GetValueForOption(transitive),
+                Config = context.ParseResult.GetValueForOption(config),
+                BaseDir = context.ParseResult.GetValueForOption(baseDir),
+                RuntimeDir = context.ParseResult.GetValueForOption(runtimeDir) ?? [],
+                ExcludeRuntime = context.ParseResult.GetValueForOption(excludeRuntime),
+            }.Execute(context.GetCancellationToken()));
 
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {
