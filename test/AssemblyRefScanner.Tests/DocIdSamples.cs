@@ -88,6 +88,8 @@ public class Widget : IProcess
 
     public void M6(int i, params object[] args) { }
 
+    public void M7(ReadOnlySpan<char> x) { }
+
     // properties and indexes
     public int Width { get => 0; set { } }
 
