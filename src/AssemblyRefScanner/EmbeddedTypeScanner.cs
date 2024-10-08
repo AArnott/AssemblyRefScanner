@@ -2,16 +2,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.CommandLine.Invocation;
+using System.ComponentModel;
 using System.Reflection.PortableExecutable;
 
 namespace AssemblyRefScanner;
 
 internal class EmbeddedTypeScanner : ScannerBase
 {
-    internal async Task Execute(string path, IList<string> embeddableAssemblies, InvocationContext invocationContext, CancellationToken cancellationToken)
+    internal required string Path { get; init; }
+
+    internal required IList<string> EmbeddableAssemblies { get; init; }
+
+    internal async Task<int> Execute(CancellationToken cancellationToken)
     {
         HashSet<string> embeddableTypeNames = new();
-        foreach (string assemblyPath in embeddableAssemblies)
+        foreach (string assemblyPath in this.EmbeddableAssemblies)
         {
             CollectTypesFrom(embeddableTypeNames, assemblyPath);
         }
@@ -53,11 +58,11 @@ internal class EmbeddedTypeScanner : ScannerBase
             {
                 if (!results.IsEmpty)
                 {
-                    Console.WriteLine(TrimBasePath(assemblyPath, path));
+                    Console.WriteLine(TrimBasePath(assemblyPath, this.Path));
                 }
             },
             cancellationToken);
-        invocationContext.ExitCode = await this.Scan(path, typeScanner, reporter, cancellationToken);
+        return await this.Scan(this.Path, typeScanner, reporter, cancellationToken);
     }
 
     private static void CollectTypesFrom(HashSet<string> embeddableTypeNames, string assemblyPath)

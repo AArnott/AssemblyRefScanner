@@ -23,7 +23,9 @@ internal class MultiVersionOfOneAssemblyNameScanner : ScannerBase
         "System.IO.Compression",
     };
 
-    internal async Task Execute(string path, InvocationContext invocationContext, CancellationToken cancellationToken)
+    internal required string Path { get; init; }
+
+    internal async Task<int> Execute(CancellationToken cancellationToken)
     {
         var refReader = this.CreateProcessAssembliesBlock(
             mdReader => (from referenceHandle in mdReader.AssemblyReferences
@@ -44,7 +46,7 @@ internal class MultiVersionOfOneAssemblyNameScanner : ScannerBase
 
                     if (referencesByName.Value.Length > 1)
                     {
-                        Console.WriteLine(TrimBasePath(assemblyPath, path));
+                        Console.WriteLine(TrimBasePath(assemblyPath, this.Path));
                         foreach (var reference in referencesByName.Value)
                         {
                             Console.WriteLine($"\t{reference}");
@@ -56,6 +58,6 @@ internal class MultiVersionOfOneAssemblyNameScanner : ScannerBase
             },
             cancellationToken);
 
-        invocationContext.ExitCode = await this.Scan(path, refReader, aggregator, cancellationToken);
+        return await this.Scan(this.Path, refReader, aggregator, cancellationToken);
     }
 }

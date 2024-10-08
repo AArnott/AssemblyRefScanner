@@ -8,16 +8,28 @@ namespace AssemblyRefScanner;
 
 internal class ResolveAssemblyReferences : ScannerBase
 {
-    public void Execute(string assemblyPath, bool transitive, string? config, string? baseDir, string[] runtimeDir, bool excludeRuntime, InvocationContext invocationContext, CancellationToken cancellationToken)
-    {
-        baseDir ??= config is not null ? Path.GetDirectoryName(config)! : Path.GetDirectoryName(assemblyPath)!;
-        TrimTrailingSlashes(runtimeDir);
+    internal required string AssemblyPath { get; init; }
 
-        NetFrameworkAssemblyResolver? alc = config is null ? null : new(config, baseDir);
+    internal required bool Transitive { get; init; }
+
+    internal required string? Config { get; init; }
+
+    internal required string? BaseDir { get; init; }
+
+    internal required string[] RuntimeDir { get; init; }
+
+    internal required bool ExcludeRuntime { get; init; }
+
+    public void Execute(CancellationToken cancellationToken)
+    {
+        string baseDir = this.BaseDir ?? (this.Config is not null ? Path.GetDirectoryName(this.Config)! : Path.GetDirectoryName(this.AssemblyPath)!);
+        TrimTrailingSlashes(this.RuntimeDir);
+
+        NetFrameworkAssemblyResolver? alc = this.Config is null ? null : new(this.Config, baseDir);
         HashSet<string> resolvedPaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> unresolvedNames = new(StringComparer.OrdinalIgnoreCase);
 
-        EnumerateAndReportReferences(assemblyPath);
+        EnumerateAndReportReferences(this.AssemblyPath);
 
         void EnumerateAndReportReferences(string assemblyPath)
         {
@@ -27,7 +39,7 @@ internal class ResolveAssemblyReferences : ScannerBase
             // and are therefore expected to come from the app directory. Thus, any unresolved references coming *from* the runtime directory
             // will be considered By Design and not reported to stderr.
             string assemblyPathDirectory = Path.GetDirectoryName(assemblyPath)!.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            bool isThisUnderRuntimeFolder = runtimeDir.Contains(assemblyPathDirectory, StringComparer.OrdinalIgnoreCase);
+            bool isThisUnderRuntimeFolder = this.RuntimeDir.Contains(assemblyPathDirectory, StringComparer.OrdinalIgnoreCase);
 
             foreach (AssemblyName reference in this.EnumerateReferences(assemblyPath))
             {
@@ -36,9 +48,9 @@ internal class ResolveAssemblyReferences : ScannerBase
                 // Always try the runtime directories first, since no custom assembly resolver or .config processing
                 // will apply at runtime when the assembly is found in the runtime folder.
                 // When matching these, the .NET runtime disregards all details in the assembly name except the simple name, so we do too.
-                if (runtimeDir.Select(dir => Path.Combine(dir, reference.Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
+                if (this.RuntimeDir.Select(dir => Path.Combine(dir, reference.Name + ".dll")).FirstOrDefault(File.Exists) is string runtimeDirMatch)
                 {
-                    ReportResolvedReference(runtimeDirMatch, !excludeRuntime);
+                    ReportResolvedReference(runtimeDirMatch, !this.ExcludeRuntime);
                     continue;
                 }
 
@@ -88,7 +100,7 @@ internal class ResolveAssemblyReferences : ScannerBase
                     Console.WriteLine(path);
                 }
 
-                if (transitive)
+                if (this.Transitive)
                 {
                     EnumerateAndReportReferences(path);
                 }
