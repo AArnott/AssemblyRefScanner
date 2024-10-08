@@ -182,9 +182,7 @@ public class DocIdBuilder(MetadataReader mdReader)
                     builder.Append('.');
                 }
 
-                // remove generic arity if present
-                int tickIndex = genericInstanceType.GenericType.Name.Span.LastIndexOf('`');
-                builder.Append(tickIndex == -1 ? genericInstanceType.GenericType.Name : genericInstanceType.GenericType.Name.Slice(0, tickIndex));
+                builder.Append(genericInstanceType.GenericType.NameWithoutArity);
                 builder.Append('{');
 
                 foreach (var genericArgument in genericInstanceType.TypeArguments)
