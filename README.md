@@ -1,7 +1,7 @@
 # AssemblyRefScanner
 
 [![NuGet package](https://img.shields.io/nuget/v/AssemblyRefScanner)](https://www.nuget.org/packages/assemblyrefscanner)
-[![Build Status](https://dev.azure.com/andrewarnott/OSS/_apis/build/status/AssemblyRefScanner/AArnott.AssemblyRefScanner?branchName=main)](https://dev.azure.com/andrewarnott/OSS/_build/latest?definitionId=63&branchName=main)
+[![🏭 Build](https://github.com/AArnott/AssemblyRefScanner/actions/workflows/build.yml/badge.svg)](https://github.com/AArnott/AssemblyRefScanner/actions/workflows/build.yml)
 
 This tool will very quickly scan an entire directory tree for all managed assemblies that reference interesting things, including:
 
