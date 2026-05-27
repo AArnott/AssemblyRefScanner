@@ -25,7 +25,7 @@ internal class Program
         {
             Description = "The simple assembly name (e.g. \"StreamJsonRpc\") to search for in referenced assembly lists.",
         };
-        Command versions = new("assembly", "Searches for references to the assembly with the specified simple name.")
+        Command versions = new("assemblyref", "Searches for references to the assembly with the specified simple name.")
         {
             searchDirOption,
             simpleAssemblyName,
