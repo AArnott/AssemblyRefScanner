@@ -37,6 +37,18 @@ internal class Program
                 SimpleAssemblyName = parseResult.GetValue(simpleAssemblyName)!,
             }.Execute(cancellationToken));
 
+        Command ownAssembly = new("assembly", "Searches for assemblies with the specified simple name and prints their versions.")
+        {
+            searchDirOption,
+            simpleAssemblyName,
+        };
+        ownAssembly.SetAction(
+            async (parseResult, cancellationToken) => await new AssemblyScanner
+            {
+                Path = parseResult.GetValue(searchDirOption)!,
+                SimpleAssemblyName = parseResult.GetValue(simpleAssemblyName)!,
+            }.Execute(cancellationToken));
+
         Command multiVersions = new("multiversions", "All assemblies that reference multiple versions of *any* assembly will be printed.")
         {
             searchDirOption,
@@ -187,6 +199,7 @@ internal class Program
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {
             versions,
+            ownAssembly,
             multiVersions,
             embeddedSearch,
             apiRefSearch,
