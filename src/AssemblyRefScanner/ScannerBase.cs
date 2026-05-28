@@ -11,12 +11,13 @@ internal abstract class ScannerBase
 {
     protected static string TrimBasePath(string absolutePath, string searchPath)
     {
-        if (!searchPath.EndsWith('\\'))
+        if (!searchPath.EndsWith(Path.DirectorySeparatorChar) && !searchPath.EndsWith(Path.AltDirectorySeparatorChar))
         {
-            searchPath += '\\';
+            searchPath += Path.DirectorySeparatorChar;
         }
 
-        if (absolutePath.StartsWith(searchPath, StringComparison.OrdinalIgnoreCase))
+        StringComparison pathComparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (absolutePath.StartsWith(searchPath, pathComparison))
         {
             return absolutePath.Substring(searchPath.Length);
         }

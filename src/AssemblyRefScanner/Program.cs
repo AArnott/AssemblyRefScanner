@@ -25,13 +25,25 @@ internal class Program
         {
             Description = "The simple assembly name (e.g. \"StreamJsonRpc\") to search for in referenced assembly lists.",
         };
-        Command versions = new("assembly", "Searches for references to the assembly with the specified simple name.")
+        Command versions = new("assemblyref", "Searches for references to the assembly with the specified simple name.")
         {
             searchDirOption,
             simpleAssemblyName,
         };
         versions.SetAction(
             async (parseResult, cancellationToken) => await new AssemblyReferenceScanner
+            {
+                Path = parseResult.GetValue(searchDirOption)!,
+                SimpleAssemblyName = parseResult.GetValue(simpleAssemblyName)!,
+            }.Execute(cancellationToken));
+
+        Command ownAssembly = new("assembly", "Searches for assemblies with the specified simple name and prints their versions.")
+        {
+            searchDirOption,
+            simpleAssemblyName,
+        };
+        ownAssembly.SetAction(
+            async (parseResult, cancellationToken) => await new AssemblyScanner
             {
                 Path = parseResult.GetValue(searchDirOption)!,
                 SimpleAssemblyName = parseResult.GetValue(simpleAssemblyName)!,
@@ -187,6 +199,7 @@ internal class Program
         var root = new RootCommand($"{ThisAssembly.AssemblyTitle} v{ThisAssembly.AssemblyInformationalVersion}")
         {
             versions,
+            ownAssembly,
             multiVersions,
             embeddedSearch,
             apiRefSearch,
