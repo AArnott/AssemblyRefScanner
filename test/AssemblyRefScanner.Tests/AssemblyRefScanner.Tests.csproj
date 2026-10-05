@@ -8,16 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\AssemblyRefScanner\AssemblyRefScanner.csproj" />
+    <Reference Include="AssemblyRefScanner">
+      <HintPath>$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\AssemblyRefScanner.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="TUnit.Engine" />
+    <PackageReference Include="xunit.v3.assert" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="AssemblyRefScanner" />
     <Using Include="Xunit" />
+    <Using Include="TUnit.Core" />
   </ItemGroup>
 
 </Project>
