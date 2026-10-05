@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <Target Name="GetNativeAOTTests" Returns="@(_NativeAOTTest)">
-    <MSBuild Projects="@(ProjectReference)" Targets="GetNativeAOTTestVariants" BuildInParallel="true">
+    <MSBuild Projects="@(ProjectReference)" Targets="GetNativeAOTTestVariants" BuildInParallel="false">
       <Output TaskParameter="TargetOutputs" ItemName="_NativeAOTTest" />
     </MSBuild>
     <ItemGroup>
@@ -18,6 +18,6 @@
   <Target Name="PublishNativeAOTTests" AfterTargets="Publish" DependsOnTargets="GetNativeAOTTests">
     <MSBuild Projects="@(_NativeAOTTest)" Targets="Publish"
              Properties="NativeAOT=true;TargetFramework=%(_NativeAOTTest.TargetFramework);_IsPublishing=true"
-             BuildInParallel="true" />
+             BuildInParallel="false" />
   </Target>
 </Project>
