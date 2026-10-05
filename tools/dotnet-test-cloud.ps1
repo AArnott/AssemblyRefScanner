@@ -101,7 +101,7 @@ if ($isMTP) {
         -c $Configuration `
         -bl:"$testBinLog" `
         -- `
-        --filter-not-trait 'TestCategory=FailsInCloudTest' `
+        '--treenode-filter=/*/*/*/*[TestCategory!=FailsInCloudTest]' `
         @mtpArgs `
         @dumpSwitches `
         @extraArgs
