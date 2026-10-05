@@ -14,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- HintPath (not ProjectReference): AssemblyRefScanner is an Exe/tool; ProjectReference into a
+         self-contained AOT exe fails with NETSDK1150. Nested MSBuild builds a non-AOT copy first. -->
     <Reference Include="AssemblyRefScanner">
       <HintPath>$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\AssemblyRefScanner.dll</HintPath>
     </Reference>
