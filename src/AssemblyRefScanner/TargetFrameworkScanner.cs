@@ -4,11 +4,15 @@
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Xml.Linq;
 
 namespace AssemblyRefScanner;
 
-internal class TargetFrameworkScanner : ScannerBase
+/// <summary>
+/// Scans assemblies for target framework information.
+/// </summary>
+internal partial class TargetFrameworkScanner : ScannerBase
 {
     private const string DgmlNamespace = "http://schemas.microsoft.com/vs/2009/dgml";
     private static readonly ReadOnlyMemory<byte>[] DotnetRuntimePublicKeyTokens = new ReadOnlyMemory<byte>[]
@@ -126,7 +130,7 @@ internal class TargetFrameworkScanner : ScannerBase
 
         if (this.Json is not null)
         {
-            var serializedResults = JsonSerializer.Serialize(bestTargetFrameworkPerAssembly);
+            var serializedResults = JsonSerializer.Serialize(bestTargetFrameworkPerAssembly, JsonContext.Default.DictionaryStringAssemblyInfo);
             File.WriteAllText(this.Json, serializedResults);
         }
 
@@ -257,6 +261,11 @@ internal class TargetFrameworkScanner : ScannerBase
         }
 
         return builder.ToString();
+    }
+
+    [JsonSerializable(typeof(Dictionary<string, AssemblyInfo>))]
+    private partial class JsonContext : JsonSerializerContext
+    {
     }
 
     private record AssemblyInfo(string AssemblyName, FrameworkName? TargetFramework, List<string> References, bool IsRuntimeAssembly)
