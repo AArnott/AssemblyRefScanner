@@ -8,19 +8,16 @@ using AssemblyRefScanner;
 
 public class DocIdBuilderTests : IDisposable
 {
-    private readonly ITestOutputHelper logger;
     private readonly FileStream assemblyStream;
     private readonly PEReader peReader;
     private readonly MetadataReader reader;
     private readonly DocIdBuilder docIdBuilder;
 
-    public DocIdBuilderTests(ITestOutputHelper logger)
+    public DocIdBuilderTests()
     {
-        this.logger = logger;
-
         try
         {
-            this.assemblyStream = File.OpenRead(Assembly.GetExecutingAssembly().Location);
+            this.assemblyStream = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "AssemblyRefScanner.Tests.dll"));
             this.peReader = new(this.assemblyStream);
             this.reader = this.peReader.GetMetadataReader();
             this.docIdBuilder = new(this.reader);
@@ -39,7 +36,7 @@ public class DocIdBuilderTests : IDisposable
         this.assemblyStream.Dispose();
     }
 
-    [Fact]
+    [Test]
     public void Types()
     {
         string[] expected = [
@@ -58,7 +55,7 @@ public class DocIdBuilderTests : IDisposable
         this.AssertMatchingDocIds(expected, this.reader.TypeDefinitions.Select(h => (EntityHandle)h));
     }
 
-    [Fact]
+    [Test]
     public void Fields()
     {
         string[] expected = [
@@ -85,7 +82,7 @@ public class DocIdBuilderTests : IDisposable
         this.AssertMatchingDocIds(expected, this.reader.FieldDefinitions.Select(h => (EntityHandle)h));
     }
 
-    [Fact]
+    [Test]
     public void Methods()
     {
         string[] expected = [
@@ -130,7 +127,7 @@ public class DocIdBuilderTests : IDisposable
         this.AssertMatchingDocIds(expected, this.reader.MethodDefinitions.Select(h => (EntityHandle)h));
     }
 
-    [Fact]
+    [Test]
     public void Events()
     {
         string[] expected = [
@@ -139,7 +136,7 @@ public class DocIdBuilderTests : IDisposable
         this.AssertMatchingDocIds(expected, this.reader.EventDefinitions.Select(e => (EntityHandle)e));
     }
 
-    [Fact]
+    [Test]
     public void Properties()
     {
         string[] expected = [
@@ -150,7 +147,7 @@ public class DocIdBuilderTests : IDisposable
         this.AssertMatchingDocIds(expected, this.reader.PropertyDefinitions.Select(h => (EntityHandle)h));
     }
 
-    [Fact]
+    [Test]
     public void NoNamespace()
     {
         TypeDefinitionHandle selfHandle = this.reader.TypeDefinitions.Single(h => this.reader.StringComparer.Equals(this.reader.GetTypeDefinition(h).Name, nameof(DocIdBuilderTests)));
@@ -166,7 +163,6 @@ public class DocIdBuilderTests : IDisposable
             if (docId?.Contains("DocIdSamples") is true)
             {
                 actualDocIds.Add(docId);
-                this.logger.WriteLine(docId);
             }
         }
 

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>false</IsTestProject>
+    <RuntimeIdentifier>$(DefaultRuntimeIdentifier)</RuntimeIdentifier>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+
+  <Import Project="..\AOT.props" />
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="AssemblyRefScanner" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- HintPath (not ProjectReference): AssemblyRefScanner is an Exe/tool; ProjectReference into a
+         self-contained AOT exe fails with NETSDK1150. Nested MSBuild builds a non-AOT copy first. -->
+    <Reference Include="AssemblyRefScanner">
+      <HintPath>$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\AssemblyRefScanner.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="BuildAssemblyRefScanner" BeforeTargets="ResolveAssemblyReferences">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\..\src\AssemblyRefScanner\AssemblyRefScanner.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=net8.0;RuntimeIdentifier=;SelfContained=false;PublishAot=false;NativeAOT=;_IsPublishing=" />
+  </Target>
+</Project>
