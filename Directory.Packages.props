@@ -4,7 +4,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicrosoftTestingPlatformVersion>2.4.1</MicrosoftTestingPlatformVersion>
+    <MicrosoftTestingPlatformVersion>2.5.1</MicrosoftTestingPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.13.22" />
