@@ -7,19 +7,16 @@ using System.Reflection.PortableExecutable;
 
 public class DocIdParserTests : IDisposable
 {
-    private readonly ITestOutputHelper logger;
     private readonly FileStream assemblyStream;
     private readonly PEReader peReader;
     private readonly MetadataReader reader;
     private readonly DocIdBuilder docIdBuilder;
 
-    public DocIdParserTests(ITestOutputHelper logger)
+    public DocIdParserTests()
     {
-        this.logger = logger;
-
         try
         {
-            this.assemblyStream = File.OpenRead(Assembly.GetExecutingAssembly().Location);
+            this.assemblyStream = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "AssemblyRefScanner.Tests.dll"));
             this.peReader = new(this.assemblyStream);
             this.reader = this.peReader.GetMetadataReader();
             this.docIdBuilder = new(this.reader);
@@ -38,7 +35,7 @@ public class DocIdParserTests : IDisposable
         this.assemblyStream.Dispose();
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_TypeDefinitions()
     {
         Dictionary<TypeDefinitionHandle, string> dict = this.reader.TypeDefinitions.ToDictionary(
@@ -46,7 +43,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((TypeDefinitionHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Type, match.Kind);
             foreach ((TypeDefinitionHandle candidateHandle, string candidateDocId) in dict)
@@ -56,7 +52,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_MethodDefinitions()
     {
         Dictionary<MethodDefinitionHandle, string> dict = this.reader.MethodDefinitions.ToDictionary(
@@ -64,7 +60,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((MethodDefinitionHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Method, match.Kind);
             foreach ((MethodDefinitionHandle candidateHandle, string candidateDocId) in dict)
@@ -74,7 +69,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_PropertyDefinitions()
     {
         Dictionary<PropertyDefinitionHandle, string> dict = this.reader.PropertyDefinitions.ToDictionary(
@@ -82,7 +77,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((PropertyDefinitionHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Property, match.Kind);
             foreach ((PropertyDefinitionHandle candidateHandle, string candidateDocId) in dict)
@@ -92,7 +86,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_EventDefinitions()
     {
         Dictionary<EventDefinitionHandle, string> dict = this.reader.EventDefinitions.ToDictionary(
@@ -100,7 +94,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((EventDefinitionHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Event, match.Kind);
             foreach ((EventDefinitionHandle candidateHandle, string candidateDocId) in dict)
@@ -110,7 +103,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_FieldDefinitions()
     {
         Dictionary<FieldDefinitionHandle, string> dict = this.reader.FieldDefinitions.ToDictionary(
@@ -118,7 +111,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((FieldDefinitionHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Field, match.Kind);
             foreach ((FieldDefinitionHandle candidateHandle, string candidateDocId) in dict)
@@ -128,7 +120,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_TypeReferences()
     {
         Dictionary<TypeReferenceHandle, string> dict = this.reader.TypeReferences.ToDictionary(
@@ -136,7 +128,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((TypeReferenceHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.Equal(DocId.ApiKind.Type, match.Kind);
             foreach ((TypeReferenceHandle candidateHandle, string candidateDocId) in dict)
@@ -147,7 +138,7 @@ public class DocIdParserTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public void Parse_IsMatch_MemberReferences()
     {
         Dictionary<MemberReferenceHandle, string> dict = this.reader.MemberReferences.ToDictionary(
@@ -155,7 +146,6 @@ public class DocIdParserTests : IDisposable
             h => this.docIdBuilder.GetDocumentationCommentId(h));
         foreach ((MemberReferenceHandle h, string docId) in dict)
         {
-            this.logger.WriteLine(docId);
             DocId.Descriptor match = DocId.Parse(docId);
             Assert.NotEqual(DocId.ApiKind.Type, match.Kind);
             foreach ((MemberReferenceHandle candidateHandle, string candidateDocId) in dict)

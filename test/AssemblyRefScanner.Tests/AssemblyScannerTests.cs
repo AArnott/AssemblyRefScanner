@@ -16,10 +16,10 @@ public class AssemblyScannerTests : IDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public async Task AssemblyCommand_FindsMatchingDllAndPrintsMetadata()
     {
-        string toolPath = typeof(DocId).Assembly.Location;
+        string toolPath = Path.Combine(AppContext.BaseDirectory, "AssemblyRefScanner.dll");
         string searchPath = global::System.IO.Path.GetDirectoryName(toolPath)!;
         Assembly toolAssembly = typeof(DocId).Assembly;
 
@@ -35,10 +35,10 @@ public class AssemblyScannerTests : IDisposable
         Assert.Contains("\t.", result.StandardOutput);
     }
 
-    [Fact]
+    [Test]
     public async Task AssemblyCommand_FindsMatchingExeFiles()
     {
-        string toolPath = typeof(DocId).Assembly.Location;
+        string toolPath = Path.Combine(AppContext.BaseDirectory, "AssemblyRefScanner.dll");
         Directory.CreateDirectory(this.tempDirectory);
 
         string copiedAssemblyPath = global::System.IO.Path.Combine(this.tempDirectory, "AssemblyRefScanner.exe");
@@ -50,10 +50,10 @@ public class AssemblyScannerTests : IDisposable
         Assert.Contains("\t.", result.StandardOutput);
     }
 
-    [Fact]
+    [Test]
     public async Task AssemblyCommand_PrintsPathInGroupedOutput()
     {
-        string toolPath = typeof(DocId).Assembly.Location;
+        string toolPath = Path.Combine(AppContext.BaseDirectory, "AssemblyRefScanner.dll");
         Directory.CreateDirectory(this.tempDirectory);
 
         string longDirectory = global::System.IO.Path.Combine(this.tempDirectory, "very", "long", "path", "that", "should", "not", "be", "truncated", "in", "the", "path", "column");

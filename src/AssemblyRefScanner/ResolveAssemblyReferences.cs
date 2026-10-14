@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.PortableExecutable;
 using Nerdbank.NetStandardBridge;
 
@@ -59,17 +60,16 @@ internal class ResolveAssemblyReferences : ScannerBase
                     try
                     {
                         AssemblyName? resolvedAssembly = alc.GetAssemblyNameByPolicy(reference);
+                        string? resolvedAssemblyPath = GetResolvedAssemblyPath(resolvedAssembly);
 
-#pragma warning disable SYSLIB0044 // Type or member is obsolete
-                        if (resolvedAssembly?.CodeBase is not null && File.Exists(resolvedAssembly.CodeBase))
+                        if (resolvedAssemblyPath is not null && File.Exists(resolvedAssemblyPath))
                         {
-                            ReportResolvedReference(resolvedAssembly.CodeBase);
+                            ReportResolvedReference(resolvedAssemblyPath);
                         }
                         else
                         {
                             ReportUnresolvedReference(resolvedAssembly ?? reference, !isThisUnderRuntimeFolder);
                         }
-#pragma warning restore SYSLIB0044 // Type or member is obsolete
                     }
                     catch (InvalidOperationException ex)
                     {
@@ -118,6 +118,11 @@ internal class ResolveAssemblyReferences : ScannerBase
             }
         }
     }
+
+    [UnconditionalSuppressMessage("Trimming", "IL3000", Justification = "NetFrameworkAssemblyResolver sets CodeBase to the resolved assembly file path.")]
+#pragma warning disable SYSLIB0044 // Type or member is obsolete
+    private static string? GetResolvedAssemblyPath(AssemblyName? assemblyName) => assemblyName?.CodeBase;
+#pragma warning restore SYSLIB0044 // Type or member is obsolete
 
     private static void TrimTrailingSlashes(string[] paths)
     {

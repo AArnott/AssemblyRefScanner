@@ -4,6 +4,7 @@
     <PackAsTool>True</PackAsTool>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <Nullable>enable</Nullable>
     <Description>An assembly, type and member scanner.</Description>
   </PropertyGroup>

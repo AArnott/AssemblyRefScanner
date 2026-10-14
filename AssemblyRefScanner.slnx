@@ -25,5 +25,6 @@
     <File Path="test/Directory.Build.props" />
     <File Path="test/Directory.Build.targets" />
     <Project Path="test/AssemblyRefScanner.Tests/AssemblyRefScanner.Tests.csproj" />
+    <Project Path="test/AotCompatibilityTest/AotCompatibilityTest.csproj" />
   </Folder>
 </Solution>
