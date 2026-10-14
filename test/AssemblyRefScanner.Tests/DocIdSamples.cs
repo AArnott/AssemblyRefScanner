@@ -11,6 +11,7 @@
 #pragma warning disable SA1202 // Elements should be ordered by access
 #pragma warning disable SA1203 // Constants should appear before fields
 #pragma warning disable SA1204 // Static elements should appear before instance elements
+#pragma warning disable SA1304 // Preserve field names used by expected DocIDs
 #pragma warning disable SA1314 // Type parameter names should begin with T
 #pragma warning disable SA1400 // Access modifier should be declared
 #pragma warning disable SA1402 // File may only contain a single type

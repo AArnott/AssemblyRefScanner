@@ -9,6 +9,7 @@ namespace AssemblyRefScanner;
 /// Builds a <see href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments#d42-id-string-format">doc comment ID</see>
 /// for a given type or member reference.
 /// </summary>
+/// <param name="mdReader">The metadata reader for the assembly being scanned.</param>
 public class DocIdBuilder(MetadataReader mdReader)
 {
     private const string EventAddPrefix = "add_";
