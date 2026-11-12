@@ -25,11 +25,11 @@
   <Target Name="BuildAssemblyRefScannerForTests" BeforeTargets="ResolveAssemblyReferences" Condition="'$(IsTestProject)' == 'true'">
     <MSBuild Projects="$(MSBuildThisFileDirectory)..\src\AssemblyRefScanner\AssemblyRefScanner.csproj"
              Targets="Build"
-             Properties="Configuration=$(Configuration);TargetFramework=net8.0;RuntimeIdentifier=;SelfContained=false;PublishAot=false;NativeAOT=;_IsPublishing=" />
+             Properties="Configuration=$(Configuration);TargetFramework=net10.0;RuntimeIdentifier=;SelfContained=false;PublishAot=false;NativeAOT=;_IsPublishing=" />
   </Target>
 
   <Target Name="CopyAssemblyRefScannerRuntimeFiles" AfterTargets="Build" Condition="'$(IsTestProject)' == 'true'">
-    <Copy SourceFiles="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\AssemblyRefScanner.deps.json;$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\AssemblyRefScanner.runtimeconfig.json"
+    <Copy SourceFiles="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net10.0\AssemblyRefScanner.deps.json;$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net10.0\AssemblyRefScanner.runtimeconfig.json"
           DestinationFolder="$(OutputPath)" />
   </Target>
 
@@ -67,9 +67,9 @@
           Condition="'$(NativeAOT)' == 'true' and '$(PublishNativeAOTTests)' == 'true'">
     <ItemGroup>
       <_NativeAOTManagedAssembly Include="$(TargetPath)" />
-      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\*.dll" />
-      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\*.deps.json" />
-      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net8.0\*.runtimeconfig.json" />
+      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net10.0\*.dll" />
+      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net10.0\*.deps.json" />
+      <_NativeAOTManagedAssembly Include="$(RepoRootPath)bin\AssemblyRefScanner\$(Configuration)\net10.0\*.runtimeconfig.json" />
     </ItemGroup>
     <Copy SourceFiles="@(_NativeAOTManagedAssembly)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
   </Target>
